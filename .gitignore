@@ -1,0 +1,6 @@
+# MacOS:
+*.DS_Store
+
+# Personal folder for testing purposes:
+personal/
+
