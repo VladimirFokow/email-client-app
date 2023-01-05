@@ -1,8 +1,5 @@
 from flask import Flask, render_template, request, redirect
-from urllib.parse import unquote_plus  # url variable to normal text
-
-# TODO: create login
-# TODO: replace "Your email" with your actual email
+from urllib.parse import unquote_plus  # to convert variable from url format to normal text
 
 app = Flask(__name__)
 
@@ -20,7 +17,16 @@ def access_folder(folder):
     print(folder_name)
     if folder_name not in DEFAULT_FOLDERS + USER_FOLDERS:
         return redirect('/inbox/')
-    # emails = db ...(folder_name)
+    # emails = db ...(folder_name)  # фильтр emails по названию папки базы данных
+    # how to select an email? /folder/uuid ?
+    # TODO: pass user_email, received after authentication, and display it
     return render_template('index.html', user_folders=USER_FOLDERS)  # and activate the respective folder (change the active property)
+
+
+
+# TODO: create a login mechanism
+
+# TODO: Implement moving emails from one folder to another
+# (emails are removed from inbox when moved into a folder. So they can be only in 1 folder at a time)
 
 

@@ -1,7 +1,11 @@
 ## An email client.
 
 
-This is a web application that uses Flask for backend.
+This is a web application.
+
+Technologies used:
+- Backend: Flask, sqlite3.
+- Frontend: Bootstrap, jQuery.
 
 
 Task:
