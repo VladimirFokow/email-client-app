@@ -1,0 +1,13 @@
+{% extends "layout.html" %}
+
+{% block body %}
+
+    <h1>My App</h1>
+    <p>Hello. This is my web app.</p>
+    <form action="/greet", method="post">
+        <input type="text" name="first_name" placeholder="First name" autocomplete="off" autofocus>
+        <input type="submit" value="Submit">
+    </form>
+
+{% endblock %}
+
