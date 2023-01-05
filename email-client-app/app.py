@@ -21,6 +21,6 @@ def access_folder(folder):
     if folder_name not in DEFAULT_FOLDERS + USER_FOLDERS:
         return redirect('/inbox/')
     # emails = db ...(folder_name)
-    return render_template('dashboard.html', user_folders=USER_FOLDERS)  # and activate the respective folder (change the active property)
+    return render_template('index.html', user_folders=USER_FOLDERS)  # and activate the respective folder (change the active property)
 
 
