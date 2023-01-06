@@ -3,7 +3,7 @@
 
 {% block body %}
 <nav class="navbar navbar-dark fixed-top bg-dark flex-md-nowrap p-0 shadow">
-  <span id="navbar-email" class="mr-0" 
+  <span id="navbar-email" class="mr-0"
   data-bs-toggle="tooltip" 
   data-bs-placement="right" 
   title="Click to copy" > 
@@ -34,7 +34,7 @@
             sidebar: custom CSS (for both sidebars in common)
           -->
           <div class="sidebar-sticky">
-            <h6 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-4 mb-1 text-muted">
+            <h6 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-3 mb-1 text-muted">
               Favorites
             </h6>
             <ul class="nav flex-column">
@@ -93,12 +93,12 @@
         <nav class="col-lg-8 d-none d-md-block bg-light sidebar">
           <div class="sidebar-sticky">
             
-            <div class="list-group list-group-flush">
+            <div class="list-group list-group-flush mt-3">
               <!-- 
                 list-group: make the element a list group. This is a special type of list that is styled to look like a group of cards, meaning that each list item will have a border and a background color.
                 list-group-flush: remove the borders between the list group items. These borders are located at the top and bottom of each list item.
               -->
-              <p class="text-muted small mt-1 mb-2 pt-1 px-3">{{ '3 messages' }}</p>  <!-- TODO- insert n messages: -->
+              <p class="text-muted small mb-1 pt-0 px-3">{{ '3 messages' }}</p>  <!-- TODO- insert n messages: -->
               
               {% for i in range(3) %}  <!-- TODO- iterate over the real messages -->  <!-- TODO- deal with large message bodies -->
               <a href="#" class="list-group-item list-group-item-action py-2 lh-sm">  <!-- active -->   <!-- TODO- deal with active message -->
@@ -132,10 +132,15 @@
     <!-- Column 2: the Main area -->
     <main role="main" class="col-md-8 col-lg-7 ms-sm-auto px-4">
       
-      <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-        <h1 class="h2">Dashboard</h1>
-
+      <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-2 mt-3 pb-2 mb-3 border-bottom">
+        <h2>Dashboard</h2>
       </div>
+
+      <!--
+      {/{ email.header }}
+      {/{ email.body }} 
+      {/{ email.date }}
+    -->
       
       <h2>Email info</h2>
       <p>email contents</p>
