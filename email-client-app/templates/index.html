@@ -58,10 +58,10 @@
             </ul>
             
             <h6 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-4 mb-1 text-muted">
-              <span>Folders</span>
-              <span class="d-flex align-items-center text-muted">  <!-- TODO- add JavaScript window popup to create a folder --> 
+              <span>FOLDERS</span>
+              <a class="d-flex align-items-center text-muted" href="">  <!-- TODO- add JavaScript window popup to create a folder --> 
                 <span data-feather="plus-circle"></span>
-              </span>
+              </a>
             </h6>
             
             {% if user_folders %}
@@ -94,17 +94,17 @@
     </div>  <!-- End of column 1 -->
     
     <!-- Column 2: the Main area -->
-    <main role="main" class="col-md-8 ml-sm-auto px-4">
+    <main role="main" class="col-md-8 ms-sm-auto px-4">
       
       <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
         <h1 class="h2">Dashboard</h1>
         <div class="btn-toolbar mb-2 mb-md-0">
-          <div class="btn-group mr-2">
+          <div class="btn-group me-2"> 
             <button type="button" class="btn btn-sm btn-outline-secondary">Share</button>
             <button type="button" class="btn btn-sm btn-outline-secondary">Export</button>
           </div>
           <button type="button" class="btn btn-sm btn-outline-secondary dropdown-toggle">
-            <span data-feather="calendar"></span>
+            <span data-feather="calendar" class="align-text-bottom"></span>
             This week
           </button>
         </div>
@@ -112,16 +112,12 @@
       
       <h2>Email info</h2>
       <p>email contents</p>
-      
-    </main>
-  </div>
+    
+    
+    
+  </main>
+</div>
 </div>
 {% endblock %}
 
-
-
-{% block extra_js %}
-<script src="https://cdnjs.cloudflare.com/ajax/libs/feather-icons/4.9.0/feather.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.3/Chart.min.js"></script>
-{% endblock %}
 

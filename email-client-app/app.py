@@ -29,4 +29,3 @@ def access_folder(folder):
 # TODO: Implement moving emails from one folder to another
 # (emails are removed from inbox when moved into a folder. So they can be only in 1 folder at a time)
 
-

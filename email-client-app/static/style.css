@@ -1,8 +1,8 @@
 /* CSS variables: */
 :root {
-  /* Height of navbar
+  /* Height of the navbar:
   * (this value will not define the height. Rather, it is needed to set
-  *  the paddings of elements below it): */
+  *  the paddings of elements below it) */
   --navbar-height: 48px;
 }
 
@@ -14,7 +14,6 @@ body {
 .feather {
   width: 16px;
   height: 16px;
-  vertical-align: text-bottom;
 }
 
 
@@ -58,11 +57,11 @@ body {
 
 .sidebar .nav-link .feather {
   margin-right: 4px;
-  color: #999;
+  color: #727272;
 }
 
 .sidebar .nav-link.active {
-  color: #007bff;
+  color: #2470dc;
 }
 
 .sidebar .nav-link:hover .feather,
@@ -72,7 +71,6 @@ body {
 
 .sidebar-heading {
   font-size: .75rem;
-  text-transform: uppercase;
 }
 
 .sidebar .small-message {
@@ -98,6 +96,7 @@ body {
   display: block;
   padding: 0.75rem 1rem;
   font-size: 1rem;
+  text-decoration: none;
   color:rgba(255, 255, 255, .75);
 }
 
@@ -105,21 +104,3 @@ body {
   text-decoration: none;
   color:rgba(255, 255, 255, .9);
 }
-
-.navbar .form-control {
-  padding: .75rem 1rem;
-  border-width: 0;
-  border-radius: 0;
-}
-
-.form-control-dark {
-  color: #fff;
-  background-color: rgba(255, 255, 255, .1);
-  border-color: rgba(255, 255, 255, .1);
-}
-
-.form-control-dark:focus {
-  border-color: transparent;
-  box-shadow: 0 0 0 3px rgba(255, 255, 255, .25);
-}
-

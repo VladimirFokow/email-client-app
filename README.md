@@ -5,7 +5,8 @@ This is a web application.
 
 Technologies used:
 - Backend: Flask, sqlite3.
-- Frontend: Bootstrap, jQuery.
+- Frontend: Bootstrap5, jQuery, feathericons (icons).
+
 
 
 Task:

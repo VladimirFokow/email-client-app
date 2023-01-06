@@ -1,53 +1,13 @@
-/* globals Chart:false, feather:false */
 
+// Activate the feather icons:
 (function () {
-  'use strict'
+  'use strict'  // make sure that the code is executed in "strict mode", meaning that you can't use undeclared variables (best practice)
+  feather.replace() 
+}())  // it is IIFE (Immediately Invoked Function Expression) - it is called immediately after definition because of the () at the end
 
-  feather.replace()
 
-  // Graphs
-  var ctx = document.getElementById('myChart')
-  // eslint-disable-next-line no-unused-vars
-  var myChart = new Chart(ctx, {
-    type: 'line',
-    data: {
-      labels: [
-        'Sunday',
-        'Monday',
-        'Tuesday',
-        'Wednesday',
-        'Thursday',
-        'Friday',
-        'Saturday'
-      ],
-      datasets: [{
-        data: [
-          15339,
-          21345,
-          18483,
-          24003,
-          23489,
-          24092,
-          12034
-        ],
-        lineTension: 0,
-        backgroundColor: 'transparent',
-        borderColor: '#007bff',
-        borderWidth: 4,
-        pointBackgroundColor: '#007bff'
-      }]
-    },
-    options: {
-      scales: {
-        yAxes: [{
-          ticks: {
-            beginAtZero: false
-          }
-        }]
-      },
-      legend: {
-        display: false
-      }
-    }
-  })
-}())
+
+
+
+
+
