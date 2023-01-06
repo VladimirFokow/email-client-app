@@ -3,7 +3,11 @@
 
 {% block body %}
 <nav class="navbar navbar-dark fixed-top bg-dark flex-md-nowrap p-0 shadow">
-  <a class="mr-0 navbar-email" href="{{ url_for('access_folder', folder='inbox') }}">Your email</a>
+  <span id="navbar-email" class="mr-0" 
+  data-bs-toggle="tooltip" 
+  data-bs-placement="right" 
+  title="Click to copy" > 
+  Your email </span>
   
   <!-- <input class="form-control form-control-dark w-100" type="text" placeholder="Search" aria-label="Search"> -->
   <ul class="navbar-nav px-3">
@@ -85,8 +89,69 @@
         <!-- Second sidebar -->
         <nav class="col-lg-8 d-none d-md-block bg-light sidebar">
           <div class="sidebar-sticky">
-            <h3>Email info preview</h3>
-            <p>email contents preview</p>
+            
+            <div class="list-group list-group-flush">
+              <!-- 
+                list-group: make the element a list group. This is a special type of list that is styled to look like a group of cards, meaning that each list item will have a border and a background color.
+                list-group-flush: remove the borders between the list group items. These borders are located at the top and bottom of each list item.
+                border-bottom: add a border at the bottom of the element.
+              -->
+              
+              
+              <!-- for ... -->
+              <a href="#" class="list-group-item d-flex justify-content-between align-items-start py-2 lh-sm">
+                <div class="ms-2 me-auto">
+                  Some content
+                </div>
+                <span class="badge bg-primary rounded-pill">14</span>
+              </a>
+              <!-- endfor -->
+              
+              <!-- for ... -->
+              <a href="#" class="list-group-item list-group-item-action active py-2 lh-sm">
+                <!-- 
+                  list-group-item: make the element a list group item. This is a special type of list item that is styled to look like a card.
+                  list-group-item-action: necessary for the list group item to be clickable.
+                  active: highlight the current list group item.
+                  py-2: add 1rem of padding to the top and bottom of the list group item.
+                  lh-sm: make the list group item's text smaller.
+                -->
+                <div class="d-flex w-100 align-items-center justify-content-between">
+                  <strong class="mb-1">List group item heading</strong>
+                  <small>Wed</small>
+                </div>
+                <div class="col-10 mb-1 small">Some placeholder content in a paragraph below the heading and date.</div>
+              </a>
+              <!-- endfor -->
+              
+              <!-- for ... -->
+              <a href="#" class="list-group-item list-group-item-action py-2 lh-sm">
+                <div class="d-flex w-100 align-items-center justify-content-between">
+                  <strong class="mb-1">List group item heading heading headinggroup</strong>
+                  <small>Wed Wed Wed Wed Wed WedWed Wed</small>
+                </div>
+                <div class="col-10 mb-1 small">Some placeholder content in a paragraph below the heading heading and dg heading and dg heading and date.</div>
+              </a>
+              <!-- endfor -->
+              
+              <div class="horizontal-divider"></div>
+              
+              <!-- for ... -->
+              <a href="#" class="list-group-item list-group-item-action py-2 lh-sm">
+                <div class="d-flex w-100 align-items-center justify-content-between">
+                  <strong class="mb-1">List group item heading heading headinggroup</strong>
+                  <small>Wed Wed Wed Wed Wed WedWed Wed</small>
+                </div>
+                <div class="col-10 mb-1 small">Some placeholder content in a paragraph below the heading heading and dg heading and dg heading and date.</div>
+              </a>
+              <!-- endfor -->
+              
+            </div>
+            
+            
+            
+            
+            
           </div>
         </nav>
         
@@ -112,11 +177,11 @@
       
       <h2>Email info</h2>
       <p>email contents</p>
-    
-    
-    
-  </main>
-</div>
+      
+      
+      
+    </main>
+  </div>
 </div>
 {% endblock %}
 

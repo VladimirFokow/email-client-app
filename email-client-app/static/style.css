@@ -4,6 +4,14 @@
   * (this value will not define the height. Rather, it is needed to set
   *  the paddings of elements below it) */
   --navbar-height: 48px;
+
+  --shadow-color: rgba(0, 0, 0, .2);
+
+  /* For the center column: */
+  --distance-left: 1.6rem;
+  --distance-right: 0.8rem;
+  /* Their average: */
+  --half-distance: calc((var(--distance-left) + var(--distance-right)) / 2);
 }
 
 
@@ -47,7 +55,7 @@ body {
 
 .sidebar {
   padding: var(--navbar-height) 0 0;
-  box-shadow: inset -1px 0 0 rgba(0, 0, 0, .2);
+  box-shadow: inset -1px 0 0 var(--shadow-color);
 }
 
 .sidebar .nav-link {
@@ -79,12 +87,52 @@ body {
   font-style: italic;
 }
 
+
+/* 
+* Middle column
+*/
+
+.list-group-item {
+  background-color: transparent;
+  border: 0;
+  padding-left: var(--distance-left);
+  padding-right: var(--distance-right);
+}
+
+.list-group-item:hover {
+  box-shadow: inset -1px 0 0 var(--shadow-color);
+}
+
+.list-group-item:not(.active):hover {
+  /* Remove change of color on hover: */
+  color: inherit;
+  background-color: var(--bs-list-group-bg);
+}
+
+.list-group-item.active {
+  width: calc(100% - var(--half-distance));
+  margin-left: calc(var(--half-distance) / 2);
+  margin-right: calc(var(--half-distance) / 2);
+  padding-left: calc(var(--distance-left) - var(--half-distance) / 2);
+  padding-right: calc(var(--distance-right) - var(--half-distance) / 2);
+  /* Make background corners round: */
+  border-radius: 0.5rem;
+}
+
+.horizontal-divider {
+  height: 0;
+  margin-left: var(--distance-left);
+  margin-right: var(--distance-right);
+  border-bottom: 1px solid var(--bs-list-group-border-color);
+}
+
+
 /*
-* Content
+* Main content
 */
 
 [role="main"] {
-  padding-top: var(--navbar-height); /* Space for fixed navbar */
+  padding-top: var(--navbar-height);
 }
 
 
@@ -92,7 +140,7 @@ body {
 * Navbar
 */
 
-.navbar-email {
+#navbar-email {
   display: block;
   padding: 0.75rem 1rem;
   font-size: 1rem;
@@ -100,7 +148,10 @@ body {
   color:rgba(255, 255, 255, .75);
 }
 
-.navbar-email:hover {
+#navbar-email:hover {
   text-decoration: none;
   color:rgba(255, 255, 255, .9);
+  cursor: pointer;
 }
+
+
