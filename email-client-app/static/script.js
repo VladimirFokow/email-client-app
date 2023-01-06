@@ -33,18 +33,28 @@ function writeToTooltip(text) {
 }
 
 
-// Add the onclick event listener to the $("#navbar-email"):
-$("#navbar-email").click(function() {
+// Function that is called when the user clicks on the email:
+function whenClickedOnEmail() {
   copyToClipboard($("#navbar-email").text())
   
   // Write "Copied!" it to the emailTooltip:
   writeToTooltip("Copied!")
+  // disable the click event listener on the $("#navbar-email"):
+  $("#navbar-email").off("click")
   
-  // Wait for 2 seconds, and write "Click to copy" to the emailTooltip:
-  setTimeout(function() {
+  // Wait for 2 seconds, them write "Click to copy" to the emailTooltip:
+  setTimeout(() => {
     writeToTooltip("Click to copy")
+    // enable the click event listener on the $("#navbar-email") again:
+    $("#navbar-email").click(whenClickedOnEmail)
   }
   , 2000)
-})
+}
+
+// Add the onclick event listener to the $("#navbar-email"):
+$("#navbar-email").click(whenClickedOnEmail)
+
+
+
 
 
