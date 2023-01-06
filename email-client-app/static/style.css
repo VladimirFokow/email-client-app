@@ -12,6 +12,8 @@
   --distance-right: 1.2rem;
   /* Margin of the selection box: */
   --margin-of-selection: 0.6rem;
+
+  --navbar-color: #333;
 }
 
 
@@ -109,9 +111,8 @@ body {
 }
 
 .list-group-item:not(.active):hover {
-  /* Remove change of color on hover: */
+  /* Remove the change of color on hover: */
   color: inherit;
-  background-color: var(--bs-list-group-bg);
 }
 
 .list-group-item.active {
@@ -120,7 +121,7 @@ body {
   margin-right: var(--margin-of-selection);
   padding-left: calc(var(--distance-left) - var(--margin-of-selection));
   padding-right: calc(var(--distance-right) - var(--margin-of-selection));
-  /* Make background corners round: */
+  /* To make the background corners round: */
   border-radius: 0.5rem;
 
   /* background-color: var(--bs-list-group-active-bg); /* activated by default - blue background */
@@ -142,6 +143,7 @@ body {
 }
 
 
+
 /*
 * Main content
 */
@@ -155,17 +157,86 @@ body {
 * Navbar
 */
 
+.navbar {
+  /* background-color: rgb(122, 188, 223);  /* rgb(88, 195, 253); */
+  background-color: rgb(217, 230, 251);
+  box-shadow: 0 1px 3px var(--shadow-color);
+}
+
 #navbar-email {
   display: block;
-  padding: 0.75rem 1rem;
-  font-size: 1rem;
+  padding: 0.2rem 0.4rem;
+  margin: 0.6rem 0 0.6rem 0.8rem;
+  font-size: 0.95rem;
   text-decoration: none;
-  color:rgba(255, 255, 255, .75);
+  color: var(--navbar-color);
+  font-weight: 500;
 }
 
 #navbar-email:hover {
   text-decoration: none;
-  color:rgba(255, 255, 255, .9);
+  /* color:rgba(255, 255, 255, .9); */
   cursor: pointer;
 }
+
+#navbar-logo {
+  width: 45px;
+  height: 40px;
+  margin-left: 0.4rem;
+}
+
+.logout {
+  color: var(--navbar-color);
+}
+
+.logout:hover {
+  color: var(--navbar-color);
+  text-decoration: underline;
+}
+
+.tooltip {
+  /* Overwrite some tooltip variables: */
+  --bs-tooltip-font-size: 0.7rem;
+  --bs-tooltip-bg: #ffffff;  /* e9eaec */
+  --bs-tooltip-color: inherit;
+  --bs-tooltip-opacity: .8;
+}
+/* Other .tooltip variables: */
+/* 
+.tooltip {
+  --bs-tooltip-zindex: 1080;
+  --bs-tooltip-max-width: 200px;
+  --bs-tooltip-padding-x: 0.5rem;
+  --bs-tooltip-padding-y: 0.25rem;
+  --bs-tooltip-margin: ;
+  --bs-tooltip-font-size: 0.875rem;
+  --bs-tooltip-color: #fff;
+  --bs-tooltip-bg: #000;
+  --bs-tooltip-border-radius: 0.375rem;
+  --bs-tooltip-opacity: 0.9;
+  --bs-tooltip-arrow-width: 0.8rem;
+  --bs-tooltip-arrow-height: 0.4rem;
+  z-index: var(--bs-tooltip-zindex);
+  display: block;
+  padding: var(--bs-tooltip-arrow-height);
+  margin: var(--bs-tooltip-margin);
+  font-family: var(--bs-font-sans-serif);
+  font-style: normal;
+  font-weight: 400;
+  line-height: 1.5;
+  text-align: left;
+  text-align: start;
+  text-decoration: none;
+  text-shadow: none;
+  text-transform: none;
+  letter-spacing: normal;
+  word-break: normal;
+  white-space: normal;
+  word-spacing: normal;
+  line-break: auto;
+  font-size: var(--bs-tooltip-font-size);
+  word-wrap: break-word;
+  opacity: 0;
+} */
+
 

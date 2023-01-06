@@ -2,19 +2,21 @@
 
 
 {% block body %}
-<nav class="navbar navbar-dark fixed-top bg-dark flex-md-nowrap p-0 shadow">
+<nav class="navbar navbar-dark fixed-top flex-md-nowrap p-0">
   <span id="navbar-email" class="mr-0"
   data-bs-toggle="tooltip" 
   data-bs-placement="right" 
-  title="Click to copy" > 
-  Your email </span>
+  title="copy to clipboard">    
+  your.email@gmail.com </span>
   
-  <!-- <input class="form-control form-control-dark w-100" type="text" placeholder="Search" aria-label="Search"> -->
-  <ul class="navbar-nav px-3">
-    <li class="nav-item text-nowrap">
-      <a class="nav-link" href="#">Sign out</a>
-    </li>
-  </ul>
+  <div class="navbar-nav">
+    <div class="nav-item text-nowrap px-3">
+        <a href="{{ url_for('log_out') }}" class="nav-link py-0 logout">
+          <span>Log out</span>
+          <img id="navbar-logo" src="{{ url_for('static', filename='img/logo.png') }}" alt="logo" />
+        </a>
+    </div>
+  </div>
 </nav>
 
 <div class="container-fluid">
@@ -34,30 +36,31 @@
             sidebar: custom CSS (for both sidebars in common)
           -->
           <div class="sidebar-sticky">
-            <h6 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-3 mb-1 text-muted">
+            <h6 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-2 mb-1 text-muted">
               Favorites
             </h6>
+
             <ul class="nav flex-column">
               <li class="nav-item">
-                <a class="nav-link active" href="{{ url_for('access_folder', folder='inbox') }}">
+                <a class="nav-link active folder" href="{{ url_for('access_folder', folder='inbox', uuid=uuid) }}">
                   <span data-feather="inbox"></span>
                   Inbox
                 </a>
               </li>
               <li class="nav-item">
-                <a class="nav-link" href="{{ url_for('access_folder', folder='sent') }}">
+                <a class="nav-link folder" href="{{ url_for('access_folder', folder='sent', uuid=uuid) }}">
                   <span data-feather="send"></span>
                   Sent
                 </a>
               </li>
               <li class="nav-item">
-                <a class="nav-link" href="{{ url_for('access_folder', folder='drafts') }}">
+                <a class="nav-link folder" href="{{ url_for('access_folder', folder='drafts', uuid=uuid) }}">
                   <span data-feather="file"></span>
                   Drafts
                 </a>
               </li>
               <li class="nav-item">
-                <a class="nav-link" href="{{ url_for('access_folder', folder='bin') }}">
+                <a class="nav-link folder" href="{{ url_for('access_folder', folder='bin', uuid=uuid) }}">
                   <span data-feather="trash-2"></span>
                   Bin
                 </a>
@@ -66,7 +69,7 @@
             
             <h6 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-4 mb-1 text-muted">
               <span>FOLDERS</span>
-              <a class="d-flex align-items-center text-muted" href="">  <!-- TODO- add JavaScript window popup to create a folder --> 
+              <a class="d-flex align-items-center text-muted" href="#">  <!-- TODO- add JavaScript window popup to create a folder --> 
                 <span data-feather="plus-circle"></span>
               </a>
             </h6>
@@ -75,7 +78,7 @@
             <ul class="nav flex-column mb-2">
               {% for folder in user_folders %}
               <li class="nav-item text-nowrap">
-                <a class="nav-link" href="{{ url_for('access_folder', folder=folder) }}">
+                <a class="nav-link folder" href="{{ url_for('access_folder', folder=folder, uuid=uuid) }}">
                   <span data-feather="folder"></span> {{ folder }}
                 </a>
               </li>
@@ -93,15 +96,17 @@
         <nav class="col-lg-8 d-none d-md-block bg-light sidebar">
           <div class="sidebar-sticky">
             
-            <div class="list-group list-group-flush mt-3">
+            <div class="list-group list-group-flush mt-2">
               <!-- 
                 list-group: make the element a list group. This is a special type of list that is styled to look like a group of cards, meaning that each list item will have a border and a background color.
                 list-group-flush: remove the borders between the list group items. These borders are located at the top and bottom of each list item.
               -->
-              <p class="text-muted small mb-1 pt-0 px-3">{{ '3 messages' }}</p>  <!-- TODO- insert n messages: -->
+              <p class="text-muted small px-3 mb-1 pt-0">{{ '3 messages' }}</p>  <!-- TODO- insert n messages. Use len(emails), emails in the json notation from the database -->
               
               {% for i in range(3) %}  <!-- TODO- iterate over the real messages -->  <!-- TODO- deal with large message bodies -->
-              <a href="#" class="list-group-item list-group-item-action py-2 lh-sm">  <!-- active -->   <!-- TODO- deal with active message -->
+              <!-- TODO- for email in emails. Then uuid here will = { email.uuid } : for each email unique -->
+              <!-- and add this to classes: { 'active' if email.uuid == uuid else '' } -->
+              <a href="{{ url_for('access_folder', folder=folder, uuid=uuid) }}" class="list-group-item list-group-item-action py-2 lh-sm " data-bs-toggle="list">  <!-- TODO- onclick should be active, on the next click - remove this property -->   <!-- TODO- deal with active message -->
                 <!-- 
                   list-group-item: make the element a list group item. This is a special type of list item that is styled to look like a card.
                   list-group-item-action: necessary for the list group item to be clickable.
@@ -127,20 +132,21 @@
       </div>  <!-- End of row that contains 2 sidebars -->
     </div>  <!-- End of column 1 -->
     
-
-
+    
+    
     <!-- Column 2: the Main area -->
     <main role="main" class="col-md-8 col-lg-7 ms-sm-auto px-4">
       
-      <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-2 mt-3 pb-2 mb-3 border-bottom">
+      <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-2 mt-2 pb-2 mb-3 border-bottom">
         <h2>Dashboard</h2>
       </div>
 
       <!--
-      {/{ email.header }}
-      {/{ email.body }} 
-      {/{ email.date }}
-    -->
+        {/{ email.header }}
+        {/{ email.body }} 
+        {/{ email.date }}
+      -->
+      <!--  { show_email(opened_email) if uuid else show_blank_page() } -->
       
       <h2>Email info</h2>
       <p>email contents</p>

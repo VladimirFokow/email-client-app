@@ -6,11 +6,6 @@
 }())  // it is IIFE (Immediately Invoked Function Expression) - it is called immediately after definition because of the () at the end
 
 
-// Function that accepts a string and copies it to the clipboard:
-function copyToClipboard(text) {
-  navigator.clipboard.writeText(text)
-}
-
 // Activate the tooltips (hints when hovering over elements):
 var tooltipTriggerList = [].slice.call($('[data-bs-toggle="tooltip"]'))
 var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
@@ -19,40 +14,85 @@ var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
 var emailTooltip = tooltipList[0]
 
 
-// Function that accepts a string and writes it to the emailTooltip:
+// Handle the click event on the email address:
+
+// this function copies a string to the clipboard:
+function copyToClipboard(text) {
+  navigator.clipboard.writeText(text)
+}
+
+// this function writes a string to the emailTooltip (to the pop-up hint):
 function writeToTooltip(text) {
-  // Note: a hacky solution:
+  // Note: this is a hacky solution
   $("#navbar-email").attr("title", text)
   $("#navbar-email").attr("data-bs-original-title", text)
   emailTooltip._getTipElement().innerText = text
-
+  
   // If mouse is hovering over $("#navbar-email"):
   if ($("#navbar-email").is(":hover")) {
     emailTooltip.show()
   }
 }
 
-
-// Function that is called when the user clicks on the email:
+// this function is called when the user clicks on the email address:
 function whenClickedOnEmail() {
-  copyToClipboard($("#navbar-email").text())
+  copyToClipboard($(this).text().trim())
   
   // Write "Copied!" it to the emailTooltip:
   writeToTooltip("✅ Copied!")
   // disable the click event listener on the $("#navbar-email"):
-  $("#navbar-email").off("click")
+  $(this).off("click")
   
-  // Wait for 2 seconds, them write "Click to copy" to the emailTooltip:
+  // Wait for 2 seconds, then write "copy to clipboard" to the emailTooltip:
   setTimeout(() => {
-    writeToTooltip("Click to copy")
+    writeToTooltip("copy to clipboard")
     // enable the click event listener on the $("#navbar-email") again:
-    $("#navbar-email").click(whenClickedOnEmail)
+    $(this).click(whenClickedOnEmail)
   }
   , 2000)
 }
+// Note: $(this) is used not to run the DOM query every time. It will be the same as $("#navbar-email").
 
-// Add the onclick event listener to the $("#navbar-email"):
+// add the onclick event listener to the $("#navbar-email"):
 $("#navbar-email").click(whenClickedOnEmail)
+
+
+// Toggle the "active" class for the navigation buttons on the first sidebar:
+
+let allFolders = $(".folder");
+
+// this function toggles the "active" class on the clicked folder
+// and removes it from all the other folders:
+function toggleActiveClass(allFolders, activeFolder) {
+  for (const folder of allFolders) {
+    folder.classList.remove("active");  // remove the "active" class from all folders
+  }
+  activeFolder.classList.add("active");  // add the "active" class to the clicked folder
+}
+
+// For all existing folders: add this click event listener:
+for (const folder of allFolders) {
+  folder.addEventListener("click", event => {
+    toggleActiveClass(allFolders, event.target);
+  });
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
