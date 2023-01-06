@@ -8,10 +8,10 @@
   --shadow-color: rgba(0, 0, 0, .2);
 
   /* For the center column: */
-  --distance-left: 1.6rem;
-  --distance-right: 0.8rem;
-  /* Their average: */
-  --half-distance: calc((var(--distance-left) + var(--distance-right)) / 2);
+  --distance-left: 2rem;
+  --distance-right: 1.2rem;
+  /* Margin of the selection box: */
+  --margin-of-selection: 0.6rem;
 }
 
 
@@ -54,8 +54,13 @@ body {
 }
 
 .sidebar {
-  padding: var(--navbar-height) 0 0;
-  box-shadow: inset -1px 0 0 var(--shadow-color);
+  padding: var(--navbar-height) 0 0;  /* Height of navbar */
+  box-shadow: inset -1px 0 0 var(--shadow-color);  /* Vertical line on the right */
+}
+
+/* First .sidebar child of the .sidebars .row class: */
+.sidebars-container .row > .sidebar:first-child {
+  background-color: rgba(108, 117, 125, 0.15); /* light grey background */
 }
 
 .sidebar .nav-link {
@@ -110,17 +115,22 @@ body {
 }
 
 .list-group-item.active {
-  width: calc(100% - var(--half-distance));
-  margin-left: calc(var(--half-distance) / 2);
-  margin-right: calc(var(--half-distance) / 2);
-  padding-left: calc(var(--distance-left) - var(--half-distance) / 2);
-  padding-right: calc(var(--distance-right) - var(--half-distance) / 2);
+  width: calc(100% - var(--margin-of-selection) * 2);
+  margin-left: var(--margin-of-selection);
+  margin-right: var(--margin-of-selection);
+  padding-left: calc(var(--distance-left) - var(--margin-of-selection));
+  padding-right: calc(var(--distance-right) - var(--margin-of-selection));
   /* Make background corners round: */
   border-radius: 0.5rem;
 
   /* background-color: var(--bs-list-group-active-bg); /* activated by default - blue background */
-  /* background-color: var(--bs-secondary); /* medium grey text */
-  /* color: var(--bs-list-group-color);  /* black as all others */
+  background-color: rgba(108, 117, 125, 0.20); /* light grey background - if inactive */
+  color: var(--bs-list-group-color);  /* black text like all others */
+
+  /* Disable shadow: */
+  box-shadow: none;
+
+  /* background-color: var(--bs-secondary); /* medium grey text (so quite light) */
   /* color: var(--bs-list-group-action-color);  /* lighter */
 }
 

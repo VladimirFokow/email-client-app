@@ -38,7 +38,7 @@ function whenClickedOnEmail() {
   copyToClipboard($("#navbar-email").text())
   
   // Write "Copied!" it to the emailTooltip:
-  writeToTooltip("Copied!")
+  writeToTooltip("✅ Copied!")
   // disable the click event listener on the $("#navbar-email"):
   $("#navbar-email").off("click")
   
