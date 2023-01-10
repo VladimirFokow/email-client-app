@@ -1,5 +1,9 @@
 {% extends "layout.html" %}
 
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='access_folder.css') }}">
+{% endblock %}
+
 
 {% block body %}
 <nav class="navbar navbar-dark fixed-top flex-md-nowrap p-0">
@@ -7,11 +11,11 @@
   data-bs-toggle="tooltip" 
   data-bs-placement="right" 
   title="copy to clipboard">    
-  your.email@gmail.com </span>
+  {{ session.email }} </span>
   
   <div class="navbar-nav">
     <div class="nav-item text-nowrap px-3">
-        <a href="{{ url_for('log_out') }}" class="nav-link py-0 logout">
+        <a href="{{ url_for('logout') }}" class="nav-link py-0 logout">
           <span>Log out</span>
           <img id="navbar-logo" src="{{ url_for('static', filename='img/logo.png') }}" alt="logo" />
         </a>
@@ -42,7 +46,7 @@
 
             <ul class="nav flex-column">
               <li class="nav-item">
-                <a class="nav-link active folder" href="{{ url_for('access_folder', folder='inbox', uuid=uuid) }}">
+                <a class="nav-link folder" href="{{ url_for('access_folder', folder='inbox', uuid=uuid) }}">
                   <span data-feather="inbox"></span>
                   Inbox
                 </a>

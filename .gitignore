@@ -5,6 +5,10 @@ __pycache__/
 # MacOS:
 *.DS_Store
 
-# Personal folder for testing purposes:
-personal/
+# Application-generated:
+email-client-app/flask_session/
+email-client-app/instance/
+
+# Personal folders for testing purposes:
+*testing/
 

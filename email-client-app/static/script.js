@@ -1,12 +1,11 @@
-
-// Activate the feather icons:
+// Activate feather icons:
 (function () {
   'use strict'  // make sure that the code is executed in "strict mode", meaning that you can't use undeclared variables (best practice)
   feather.replace() 
 }())  // it is IIFE (Immediately Invoked Function Expression) - it is called immediately after definition because of the () at the end
 
 
-// Activate the tooltips (hints when hovering over elements):
+// Activate tooltips (hints when hovering over an element):
 var tooltipTriggerList = [].slice.call($('[data-bs-toggle="tooltip"]'))
 var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
   return new bootstrap.Tooltip(tooltipTriggerEl)
@@ -14,7 +13,22 @@ var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
 var emailTooltip = tooltipList[0]
 
 
-// Handle the click event on the email address:
+
+// ---------------------------------------------------------------------
+// Submit event on the "Log in" button:
+
+// this function disables the submit button inside the current element:
+function whenClickedOnLogIn() {
+  $(this).find(':input[type=submit]').attr('disabled', true);
+}
+
+// add the on submit event listener to the $("#login-form"):
+$("#login-form").submit(whenClickedOnLogIn)
+
+
+
+// ---------------------------------------------------------------------
+// Click event on the email address:
 
 // this function copies a string to the clipboard:
 function copyToClipboard(text) {
@@ -57,7 +71,10 @@ function whenClickedOnEmail() {
 $("#navbar-email").click(whenClickedOnEmail)
 
 
-// Toggle the "active" class for the navigation buttons on the first sidebar:
+
+
+// ---------------------------------------------------------------------
+// Toggle "active" class of the navigation buttons on the first sidebar:
 
 let allFolders = $(".folder");
 
@@ -79,13 +96,7 @@ for (const folder of allFolders) {
 
 
 
-
-
-
-
-
-
-
+// ---------------------------------------------------------------------
 
 
 
