@@ -51,6 +51,37 @@ def credentials_are_valid(email: str | None, password: str | None):
         return False
 
 
+def create_folder_mapping(email_provider, server_folders):
+    """ Create mapping: client folder name -> server folder name """
+    folder_mapping = {}
+    if email_provider == 'gmail.com':
+        for server_folder in server_folders:
+            name = server_folder.name
+            flags = server_folder.flags
+            if name == 'INBOX':
+                folder_mapping['inbox'] = 'INBOX'
+            elif '[Gmail]' in name:
+                if '\\Sent' in flags:
+                    folder_mapping['sent'] = name
+                elif '\\Drafts' in flags:
+                    folder_mapping['drafts'] = name
+                elif '\\Trash' in flags:
+                    folder_mapping['bin'] = name
+            else:
+                folder_mapping[name] = name
+    elif email_provider == 'ukr.net':
+        folder_mapping['inbox'] = 'Inbox'
+        folder_mapping['sent'] = 'Sent'
+        folder_mapping['drafts'] = 'Drafts'
+        folder_mapping['bin'] = 'Trash'
+        UKR_NET_NAMES = ['Inbox', 'Sent', 'Drafts', 'Trash', 'Spam']
+        for server_folder in server_folders:
+            name = server_folder.name
+            if name not in UKR_NET_NAMES:
+                folder_mapping[name] = name
+    return folder_mapping
+
+
 
 ###
 
@@ -62,35 +93,61 @@ def index():
 @app.route('/<folder>/', methods=['GET', 'POST'])
 @app.route('/<folder>/<uuid>', methods=['GET', 'POST'])
 def access_folder(folder, uuid=None):
-    # Check if are able to log in:
-    email = session.get('email')
-    password = session.get('password')
-    if not credentials_are_valid(email, password):
-        return redirect(url_for('login'))
-
     # Current email folder:
-    folder_name = unquote_plus(folder)
-    if folder_name not in DEFAULT_FOLDERS + USER_FOLDERS:
+    current_folder = unquote_plus(folder)
+    if current_folder not in DEFAULT_FOLDERS + USER_FOLDERS:
         return redirect(url_for('access_folder', folder='inbox', uuid=uuid))
     
-    # Render top N emails in the current folder 
-    # (not to overload our app with ALL the emails)  # TODO: create a button to load the next page
-    N = 10
-    # emails_of_folder = db ...(folder_name)  # фильтр emails по названию папки базы данных
+    email = session.get('email')
+    password = session.get('password')
+    go_to_login = redirect(url_for('login'))
+    if not email or not password:
+        return go_to_login
+    email_provider = email.split('@')[-1]
+    if email_provider not in ['gmail.com', 'ukr.net']:
+        return go_to_login
+    host = IMAP_CONFIGS[email_provider]['MAIL_SERVER']
+    port = IMAP_CONFIGS[email_provider]['MAIL_PORT']
+    try:
+        with MailBox(host=host, port=port).login(email, password) as mailbox:
+            # Get the folder names on the server:
+            server_folders = mailbox.folder.list()
+            folder_mapping = create_folder_mapping(email_provider, server_folders)
 
-    # if uuid not in emails_of_folder, then uuid = uuid of the first email_of_folder.
-    # if 0 emails_of_folder, this is a special case: the pages will be empty, and need a message.
-    #     # how to select an email? /folder/uuid ?
-    # opened_email = ... find email by uuid. Else None.
+            # Render the latest N emails in the current folder 
+            # (not to overload our app with ALL the emails)
+            N = 10
+            mailbox.folder.set(folder_mapping[current_folder])
+            msgs = list(mailbox.fetch(limit=N, reverse=True, bulk=True))
+            # return current_folder, folder_mapping, jsonify(msgs)
+            # TODO: show folders and messages in selected folder
+
+        # # Getting the attachments:
+        # for msg in msgs:
+        #     for att in msg.attachments:
+        #         print(att.filename, att.content_type)
+        #         with open('C:/1/{}'.format(att.filename), 'wb') as f:
+        #             f.write(att.payload)
+
+        # emails_of_folder = db ...(folder_name)  # фильтр emails по названию папки базы данных
+
+        # if uuid not in emails_of_folder, then uuid = uuid of the first email_of_folder.
+        # if 0 emails_of_folder, this is a special case: the pages will be empty, and need a message.
+        #     # how to select an email? /folder/uuid ?
+        # opened_email = ... find email by uuid. Else None.
+        
+        return render_template('access_folder.html', 
+                            title='Email Client',
+                            user_folders=USER_FOLDERS,
+                            folder=folder,
+                            uuid=uuid,
+                            #    emails_of_folder=emails_of_folder,  # json
+                            #    opened_email=opened_email,  # json
+                            )
+        
+    except MailboxLoginError:
+        return go_to_login
     
-    return render_template('access_folder.html', 
-                           title='Email Client',
-                           user_folders=USER_FOLDERS,
-                           folder=folder,
-                           uuid=uuid,
-                        #    emails_of_folder=emails_of_folder,  # json
-                        #    opened_email=opened_email,  # json
-                           )
 
 
 @app.route('/login', methods=['GET', 'POST'])
