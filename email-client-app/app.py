@@ -1,14 +1,22 @@
 from flask import (Flask, render_template, redirect, url_for, request, 
-                   session, jsonify, flash)
+                   session, jsonify, flash, g)
 from flask_session import Session
 from urllib.parse import unquote_plus  # to convert variables from url-format to normal
 from imap_tools import MailBox, AND, MailboxLoginError
+import secrets
 # import imap_tools
 # import imaplib
 # import email
 from configs import SMPT_CONFIGS, IMAP_CONFIGS, POP_CONFIGS
 from database import create_database
 from forms import LoginForm
+from mail_server_connection import ConnectionStorage
+
+
+###
+import time
+print(f'\n\n---\n APP IS STARTING NOW !!!!!!!!!! -- {int(time.time() % 3600)} s \n---\n\n')
+###
 
 
 app = Flask(__name__)
@@ -19,24 +27,39 @@ app.config['SESSION_TYPE'] = 'filesystem'
 
 # Database
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False  # to prevent the warning (about the future version)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///data/emails.db'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///emails.db'
 
 # WTForms needs a secret key (to protect against CSRF)
-app.config['SECRET_KEY'] = '080dc86b48a799f61ab7bde438ca22bb'
+app.config['SECRET_KEY'] = secrets.token_hex(16)  # '080dc86b48a799f61ab7bde438ca22bb'
+
+
+conn_storage = ConnectionStorage()
+
+@app.before_request
+def before_request():
+    g.mailbox = conn_storage.get_connection()
+
+
+@app.teardown_request
+def teardown_request(exception):
+    mailbox = getattr(g, 'mailbox', None)
+    if mailbox is not None:
+        conn_storage.return_connection(mailbox)
 
 
 
-###
+# db, Email, Folder, Attachment = create_database(app)
+db, Folder = create_database(app)
 
 Session(app)
-# create_database(app)
+
 
 DEFAULT_FOLDERS = ['inbox', 'sent', 'drafts', 'bin']  # TODO: write to the db (if not already present there)
 USER_FOLDERS = ['Folder 1', 'Folder 2']  # TODO: read from the db (excluding the default folders)
 
 
 def credentials_are_valid(email: str | None, password: str | None):
-    return True  # TODO: delete. This is for testing only
+    # return True  # TODO: delete. This is for testing only
     if not email or not password:
         return False
     email_provider = email.split('@')[-1]
@@ -46,6 +69,7 @@ def credentials_are_valid(email: str | None, password: str | None):
     port = IMAP_CONFIGS[email_provider]['MAIL_PORT']
     try:
         with MailBox(host=host, port=port).login(email, password):
+            print('--- Logging in to the server')
             return True
     except MailboxLoginError:
         return False
@@ -82,6 +106,12 @@ def create_folder_mapping(email_provider, server_folders):
     return folder_mapping
 
 
+###
+
+def query_the_server():
+    """ Query the server for ALL emails """
+    return jsonify()
+
 
 ###
 
@@ -110,6 +140,7 @@ def access_folder(folder, uuid=None):
     port = IMAP_CONFIGS[email_provider]['MAIL_PORT']
     try:
         with MailBox(host=host, port=port).login(email, password) as mailbox:
+            print('--- Logging in to the server')
             # Get the folder names on the server:
             server_folders = mailbox.folder.list()
             folder_mapping = create_folder_mapping(email_provider, server_folders)
@@ -152,13 +183,19 @@ def access_folder(folder, uuid=None):
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
+    # Check if we are logged in already:
+    email = session.get('email')
+    password = session.get('password')
+    if credentials_are_valid(email, password):
+        return redirect(url_for('access_folder', folder='inbox'))
+
     login_form = LoginForm()
     if login_form.validate_on_submit():
         # If the form was submitted with data in the correct format:
         email = login_form.email.data
         password = login_form.password.data
         if not credentials_are_valid(email, password):
-            flash('Invalid email of password 😕', category='danger')
+            flash('Sorry, invalid email or password 😕', category='danger')
             return redirect(url_for('login'))
         # Save valid credentials to session:
         session['email'] = email

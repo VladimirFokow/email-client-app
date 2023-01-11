@@ -21,16 +21,17 @@ def create_database(app):
     #     folder_id = db.Column(db.Integer, db.ForeignKey('folder.id'), nullable=False)
 
 
-    # many-to-many association table:
+    # many-to-many association table:  # TODO: make it many to one (email belongs only to 1 folder)
     email_folder = db.Table(
-        db.Column("email_id", db.ForeignKey("email.id"), primary_key=True),
-        db.Column("folder_id", db.ForeignKey("folder.id"), primary_key=True),
+        'email_folder', 
+        db.Column("email_id", db.Integer, db.ForeignKey("email.id")),
+        db.Column("folder_id", db.Integer, db.ForeignKey("folder.id")),
     )
 
 
     class Email(db.Model):
         email_id = db.Column('id', db.Integer, primary_key=True)  # TODO: replace with uuid?
-        path = db.Column(db.String)  # path in the file system: ./data/emails/<uuid>/<email_id>.eml
+        path = db.Column(db.String)  # path in the file system: ./<email>/data/emails/<uuid>/<email_id>.eml
         time = db.Column(db.Time)
         address_from = db.Column('from', db.String(MAX_EMAIL_ADDR_LEN))
         address_to = db.Column('to', db.String(MAX_EMAIL_ADDR_LEN))
@@ -43,18 +44,23 @@ def create_database(app):
         folder_id = db.Column('id', db.Integer, primary_key=True)
         name = db.Column(db.String(MAX_FOLDER_NAME_LEN), nullable=False)
 
+        def __repr__(self):
+            return f"<Folder(folder_id={self.folder_id}, name={self.name})>"
 
-    class Attachment(db.Model):
-        attachment_id = db.Column('id', db.Integer, primary_key=True)
-        email_id = db.Column(db.Integer, db.ForeignKey('email.id'), nullable=False)
-        filename = db.Column(db.String(MAX_FILE_NAME_LEN), nullable=False)
-        path = db.Column(db.String, nullable=False)  # path in the file system: ./data/emails/<uuid>/attachents/<filename>
+
+    # class Attachment(db.Model):
+    #     attachment_id = db.Column('id', db.Integer, primary_key=True)
+    #     email_id = db.Column(db.Integer, db.ForeignKey('email.id'), nullable=False)
+    #     filename = db.Column(db.String(MAX_FILE_NAME_LEN), nullable=False)
+    #     path = db.Column(db.String, nullable=False)  # path in the file system: ./<email>/data/emails/<uuid>/attachents/<filename>
 
 
     with app.app_context():
-        db.create_all()  # creates the table schema in the database 
+        db.create_all()  # create table schema in the database 
         # (does not update tables if they are already in the database)
-        
+
+    # return db, Email, Folder, Attachment
+    return db, Folder
 
 
 
