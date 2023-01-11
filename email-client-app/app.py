@@ -36,6 +36,7 @@ USER_FOLDERS = ['Folder 1', 'Folder 2']  # TODO: read from the db (excluding the
 
 
 def credentials_are_valid(email: str | None, password: str | None):
+    return True  # TODO: delete. This is for testing only
     if not email or not password:
         return False
     email_provider = email.split('@')[-1]

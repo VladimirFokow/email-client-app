@@ -6,38 +6,68 @@
 
 
 {% block body %}
-<nav class="navbar navbar-dark fixed-top flex-md-nowrap p-0">
-  <span id="navbar-email" class="mr-0"
-  data-bs-toggle="tooltip" 
-  data-bs-placement="right" 
-  title="copy to clipboard">    
-  {{ session.email }} </span>
-  
-  <div class="navbar-nav">
-    <div class="nav-item text-nowrap px-3">
-        <a href="{{ url_for('logout') }}" class="nav-link py-0 logout">
-          <span>Log out</span>
-          <img id="navbar-logo" src="{{ url_for('static', filename='img/logo.png') }}" alt="logo" />
-        </a>
+<div class="header container-fluid fixed-top flex-md-nowrap">
+  <div class="row">
+
+    <div class="col-4 col-lg-5 px-0">
+      <div id="email-container">
+        <div id="header-email" data-bs-toggle="tooltip" data-bs-placement="bottom" title="copy to clipboard"> 
+          {{ session.email }}
+        </div>
+      </div>
     </div>
+
+    <div class="col-8 col-lg-7">
+      <div class="h-100 d-flex align-items-center">
+        
+        <div id="tools-container" class="flex-grow-1">
+          <div id="header-tools"> 
+            (
+              
+              create new email 
+            | 
+            bin 
+            | 
+            move to
+
+            ) .. (
+
+              send 
+              | 
+              save draft
+
+              )
+          </div>
+        </div>
+        
+        <div>
+            <a href="{{ url_for('logout') }}" class="nav-link py-0 logout text-nowrap">
+              <span>Log out</span>
+              <img id="header-logo" src="{{ url_for('static', filename='img/logo.png') }}" alt="logo" />
+            </a>
+        </div>
+
+      </div>
+    </div>
+    
   </div>
-</nav>
+</div>
 
 <div class="container-fluid">
   <div class="row">
     
     <!-- Column 1: contains 2 sidebars -->
-    <div class="col-sm-4 col-lg-5 sidebars-container">
+    <div class="col-md-4 col-lg-5 sidebars-container">
       <div class="row">
         <!-- First sidebar -->
         <nav class="col-lg-4 d-none d-lg-block bg-lighter sidebar">
           <!--
             col-lg-4: 4 columns wide on large screens and wider.
-            d-none is Bootstrap's "display: none" class, and
+            d-none is Bootstrap's "display: none" class.
             d-lg-block is Bootstrap's "display: block" class for large screens and wider.
             The reason why we need both is because d-none is a responsive class, and d-lg-block is a breakpoint class.  Responsive classes are applied at all screen sizes, while breakpoint classes are only applied at the specified screen size and larger.
             bg-light: light grey background. A tiny little bit darker background that this is: #f8f9fa. A Bootstrap class for a tiny little bit darker background than this is bg-lighter.
-            sidebar: custom CSS (for both sidebars in common)
+            sidebar: custom CSS (for both sidebars in common).
           -->
           <div class="sidebar-sticky">
             <h6 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-2 mb-1 text-muted">
@@ -46,25 +76,25 @@
 
             <ul class="nav flex-column">
               <li class="nav-item">
-                <a class="nav-link folder" href="{{ url_for('access_folder', folder='inbox', uuid=uuid) }}">
+                <a class="nav-link folder {{ 'active' if folder == 'inbox' }}" href="{{ url_for('access_folder', folder='inbox', uuid=uuid) }}">
                   <span data-feather="inbox"></span>
                   Inbox
                 </a>
               </li>
               <li class="nav-item">
-                <a class="nav-link folder" href="{{ url_for('access_folder', folder='sent', uuid=uuid) }}">
+                <a class="nav-link folder {{ 'active' if folder == 'sent' }}" href="{{ url_for('access_folder', folder='sent', uuid=uuid) }}">
                   <span data-feather="send"></span>
                   Sent
                 </a>
               </li>
               <li class="nav-item">
-                <a class="nav-link folder" href="{{ url_for('access_folder', folder='drafts', uuid=uuid) }}">
+                <a class="nav-link folder {{ 'active' if folder == 'drafts' }}" href="{{ url_for('access_folder', folder='drafts', uuid=uuid) }}">
                   <span data-feather="file"></span>
                   Drafts
                 </a>
               </li>
               <li class="nav-item">
-                <a class="nav-link folder" href="{{ url_for('access_folder', folder='bin', uuid=uuid) }}">
+                <a class="nav-link folder {{ 'active' if folder == 'bin' }}" href="{{ url_for('access_folder', folder='bin', uuid=uuid) }}">
                   <span data-feather="trash-2"></span>
                   Bin
                 </a>
@@ -80,10 +110,10 @@
             
             {% if user_folders %}
             <ul class="nav flex-column mb-2">
-              {% for folder in user_folders %}
+              {% for user_folder in user_folders %}
               <li class="nav-item text-nowrap">
-                <a class="nav-link folder" href="{{ url_for('access_folder', folder=folder, uuid=uuid) }}">
-                  <span data-feather="folder"></span> {{ folder }}
+                <a class="nav-link folder {{ 'active' if folder == user_folder }}" href="{{ url_for('access_folder', folder=user_folder, uuid=uuid) }}">
+                  <span data-feather="folder"></span> {{ user_folder }}
                 </a>
               </li>
               {% endfor %}
@@ -99,37 +129,33 @@
         <!-- Second sidebar -->
         <nav class="col-lg-8 d-none d-md-block bg-light sidebar">
           <div class="sidebar-sticky">
-            
             <div class="list-group list-group-flush mt-2">
-              <!-- 
-                list-group: make the element a list group. This is a special type of list that is styled to look like a group of cards, meaning that each list item will have a border and a background color.
-                list-group-flush: remove the borders between the list group items. These borders are located at the top and bottom of each list item.
+              <!--
+                list-group: list-group-items will be styled like cards (will have a border and a background color).
+                list-group-flush: remove borders between list group items.
               -->
-              <p class="text-muted small px-3 mb-1 pt-0">{{ '3 messages' }}</p>  <!-- TODO- insert n messages. Use len(emails), emails in the json notation from the database -->
+              <p class="text-muted small px-3 mb-1 pt-0">{{ '3 messages' }}</p>  <!-- TODO- len(emails), emails is in the json notation from the database -->
               
-              {% for i in range(3) %}  <!-- TODO- iterate over the real messages -->  <!-- TODO- deal with large message bodies -->
-              <!-- TODO- for email in emails. Then uuid here will = { email.uuid } : for each email unique -->
-              <!-- and add this to classes: { 'active' if email.uuid == uuid else '' } -->
-              <a href="{{ url_for('access_folder', folder=folder, uuid=uuid) }}" class="list-group-item list-group-item-action py-2 lh-sm " data-bs-toggle="list">  <!-- TODO- onclick should be active, on the next click - remove this property -->   <!-- TODO- deal with active message -->
-                <!-- 
-                  list-group-item: make the element a list group item. This is a special type of list item that is styled to look like a card.
-                  list-group-item-action: necessary for the list group item to be clickable.
-                  py-2: add 1rem of padding to the top and bottom of the list group item.
-                  lh-sm: make the list group item's text smaller.
-                  active: highlight the current list group item.
-                -->
-                <div class="d-flex w-100 align-items-center justify-content-between">
-                  <strong class="mb-1">List group item heading</strong>
-                  <small>Fri 6 Jan</small>
-                </div>
-                <div class="col-10 mb-1 small">Some placeholder content in a paragraph below the heading and date.</div>
-              </a>
-              
-              <div class="horizontal-divider"></div>
+              {% for i in range(3) %}  <!-- TODO- for email in emails -->
+                <a href="{{ url_for('access_folder', folder=folder, uuid=uuid) }}" class="list-group-item list-group-item-action py-2 lh-sm" data-bs-toggle="list">  <!-- automatically adds the active class to the current list group item -->
+                  <!-- 
+                    list-group-item: make the element a list-group-item.
+                    list-group-item-action: necessary for it to be clickable.
+                    py-2: padding to top and bottom of 0.5rem each.
+                    lh-sm: line-height small (interval between lines).
+                    active: highlight the current list group item.
+                  -->
+                  <div class="d-flex w-100 align-items-center justify-content-between">
+                    <strong class="col-9 mb-1 line-clamp-1">Email Subject</strong>
+                    <small>Fri 6 Jan</small>
+                  </div>
+                  <div class="mb-1 small line-clamp-2">Some placeholder content in a paragraph below the heading and date. Some placeholder content in a paragraph below the heading and date. content in a paragraph below the heading and date. content in a paragraph below the heading and date. </div>
+                </a>
+                
+                <div class="horizontal-divider"></div>
               {% endfor %}
-              
-            </div>
             
+            </div>
           </div>
         </nav>
         
@@ -142,7 +168,8 @@
     <main role="main" class="col-md-8 col-lg-7 ms-sm-auto px-4">
       
       <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-2 mt-2 pb-2 mb-3 border-bottom">
-        <h2>Dashboard</h2>
+        <h2>Email subject</h2>
+        <h5>address_from@gmail.com</h5>
       </div>
 
       <!--
