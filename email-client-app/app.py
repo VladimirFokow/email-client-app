@@ -16,8 +16,7 @@ app = Flask(__name__)
 
 # Session
 app.config['SESSION_TYPE'] = 'filesystem'
-app.config['SESSION_PERMANENT'] = True
-app.config['PERMANENT_SESSION_LIFETIME'] = 20 * 60  # seconds after user inactivity
+app.config['SESSION_PERMANENT'] = False
 
 # Database
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False  # prevent warning about future changes
