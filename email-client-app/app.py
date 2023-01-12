@@ -3,81 +3,48 @@ from flask import (Flask, render_template, redirect, url_for, request,
 from flask_session import Session
 from urllib.parse import unquote_plus  # to convert variables from url-format to normal
 from imap_tools import MailBox, AND, MailboxLoginError
-import secrets
+from secrets import token_hex
 # import imap_tools
 # import imaplib
 # import email
-from configs import SMPT_CONFIGS, IMAP_CONFIGS, POP_CONFIGS
+from configs import SMPT_CONFIGS, IMAP_CONFIGS, POP_CONFIGS, SUPPORTED_EMAIL_PROVIDERS
 from database import create_database
 from forms import LoginForm
-from mail_server_connection import ConnectionStorage
-
-
-###
-import time
-print(f'\n\n---\n APP IS STARTING NOW !!!!!!!!!! -- {int(time.time() % 3600)} s \n---\n\n')
-###
 
 
 app = Flask(__name__)
 
 # Session
 app.config['SESSION_TYPE'] = 'filesystem'
-app.config['SESSION_PERMANENT'] = True  #
-app.config['PERMANENT_SESSION_LIFETIME'] = 20 * 60  # seconds
+app.config['SESSION_PERMANENT'] = True
+app.config['PERMANENT_SESSION_LIFETIME'] = 20 * 60  # seconds after user inactivity
 
 # Database
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False  # to prevent the warning (about the future version)
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False  # prevent warning about future changes
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///emails.db'
 
 # WTForms needs a secret key (to protect against CSRF)
-app.config['SECRET_KEY'] = secrets.token_hex(16)  # '080dc86b48a799f61ab7bde438ca22bb'
+app.config['SECRET_KEY'] = token_hex(16)  # '080dc86b48a799f61ab7bde438ca22bb'
 
 
-
-conn_storage = ConnectionStorage()
-
-# mailbox.close_connection()
-
-
-@app.before_request
-def before_request():
-    g.mailbox = conn_storage.get_connection()
-
-
-# @app.teardown_request
-# def teardown_request(exception):
-#     mailbox = getattr(g, 'mailbox', None)
-#     if mailbox is not None:
-#         mailbox.return_connection()
-
-
-
-# db, Email, Folder, Attachment = create_database(app)
-db, Folder = create_database(app)
-
+db, Email, Folder, Attachment = create_database(app)
 Session(app)
 
 
-DEFAULT_FOLDERS = ['inbox', 'sent', 'drafts', 'bin']  # TODO: write to the db (if not already present there)
-USER_FOLDERS = ['Folder 1', 'Folder 2']  # TODO: read from the db (excluding the default folders)
+def credentials_are_valid(email, password):
+    if not email or not password:
+        return False
+    email_provider = email.split('@')[-1]
+    if email_provider not in SUPPORTED_EMAIL_PROVIDERS:
+        return False
+    host = IMAP_CONFIGS[email_provider]['MAIL_SERVER']
+    port = IMAP_CONFIGS[email_provider]['MAIL_PORT']
+    try:
+        with MailBox(host=host, port=port).login(email, password):
+            return True
+    except MailboxLoginError:
+        return False
 
-
-# def credentials_are_valid(email: str | None, password: str | None):
-#     # return True  # TODO: delete. This is for testing only
-#     if not email or not password:
-#         return False
-#     email_provider = email.split('@')[-1]
-#     if email_provider not in ['gmail.com', 'ukr.net']:
-#         return False
-#     host = IMAP_CONFIGS[email_provider]['MAIL_SERVER']
-#     port = IMAP_CONFIGS[email_provider]['MAIL_PORT']
-#     try:
-#         with MailBox(host=host, port=port).login(email, password):
-#             print('--- Logging in to the server')
-#             return True
-#     except MailboxLoginError:
-#         return False
 
 
 def create_folder_mapping(email_provider, server_folders):
@@ -114,53 +81,32 @@ def create_folder_mapping(email_provider, server_folders):
 ###
 
 def query_the_server():
-    """ Query the server for ALL emails """
+    """ Query the email server """
     return jsonify()
 
 
 ###
 
-@app.route('/')
+
+@app.route('/', methods=['GET', 'POST'])
 def index():
-    return redirect(url_for('access_folder', folder='inbox'))
+    if not session.get('logged in'):
+        return redirect(url_for('login'))
+    ...
+    # return redirect(url_for('access_folder', folder='inbox'))
 
 
+# These routes will be changed
 @app.route('/<folder>/', methods=['GET', 'POST'])
 @app.route('/<folder>/<uuid>', methods=['GET', 'POST'])
 def access_folder(folder, uuid=None):
+    if not session.get('logged in'):
+        return redirect(url_for('login'))
     # Current email folder:
     current_folder = unquote_plus(folder)
-    if current_folder not in DEFAULT_FOLDERS + USER_FOLDERS:
-        return redirect(url_for('access_folder', folder='inbox', uuid=uuid))
-    
     email = session.get('email')
     password = session.get('password')
-    
-    
-    
-    
-    mailbox = getattr(g, 'mailbox')  # do we currently have a connection to the server?
-    if not mailbox:
-        try:
-            mailbox = conn_storage.create_connection(email, password)
-        except MailboxLoginError:
-            return redirect(url_for('login'))
-        g.mailbox = mailbox  # save in case other 
-
-
-
-
-
-
-
-
-
-    go_to_login = redirect(url_for('login'))
-    if not email or not password:
-        return go_to_login
     email_provider = email.split('@')[-1]
-    if email_provider not in ['gmail.com', 'ukr.net']:
-        return go_to_login
     host = IMAP_CONFIGS[email_provider]['MAIL_SERVER']
     port = IMAP_CONFIGS[email_provider]['MAIL_PORT']
     try:
@@ -169,6 +115,10 @@ def access_folder(folder, uuid=None):
             # Get the folder names on the server:
             server_folders = mailbox.folder.list()
             folder_mapping = create_folder_mapping(email_provider, server_folders)
+            DEFAULT_FOLDERS = ['inbox', 'sent', 'drafts', 'bin']
+            user_folders = [folder for folder in folder_mapping if folder not in DEFAULT_FOLDERS]
+            if current_folder not in DEFAULT_FOLDERS + user_folders:
+                return redirect(url_for('access_folder', folder='inbox', uuid=uuid))
 
             # Render the latest N emails in the current folder 
             # (not to overload our app with ALL the emails)
@@ -194,7 +144,7 @@ def access_folder(folder, uuid=None):
         
         return render_template('access_folder.html', 
                             title='Email Client',
-                            user_folders=USER_FOLDERS,
+                            user_folders=user_folders,
                             folder=folder,
                             uuid=uuid,
                             #    emails_of_folder=emails_of_folder,  # json
@@ -202,30 +152,14 @@ def access_folder(folder, uuid=None):
                             )
         
     except MailboxLoginError:
-        return go_to_login
+        return redirect(url_for('login'))
     
 
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
-    # Check if we are logged in already:
-    email = session.get('email')
-    password = session.get('password')
-
-
-
-
-
-
-
-
-
-
-
-
-    if credentials_are_valid(email, password):
+    if session.get('logged in'):
         return redirect(url_for('access_folder', folder='inbox'))
-
     login_form = LoginForm()
     if login_form.validate_on_submit():
         # If the form was submitted with data in the correct format:
@@ -237,6 +171,7 @@ def login():
         # Save valid credentials to session:
         session['email'] = email
         session['password'] = password
+        session['logged in'] = True
         return redirect(url_for('access_folder', folder='inbox'))
     
     return render_template('login.html', title='Log in', form=login_form)
@@ -246,6 +181,7 @@ def login():
 def logout():
     session['email'] = None
     session['password'] = None
+    session['logged in'] = False
     return redirect(url_for('login'))
 
 
