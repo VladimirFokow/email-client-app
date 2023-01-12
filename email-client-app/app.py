@@ -25,7 +25,6 @@ app = Flask(__name__)
 app.config['SESSION_TYPE'] = 'filesystem'
 app.config['SESSION_PERMANENT'] = True  #
 app.config['PERMANENT_SESSION_LIFETIME'] = 20 * 60  # seconds
-app.modified = True  # restart timer after user activity
 
 # Database
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False  # to prevent the warning (about the future version)
