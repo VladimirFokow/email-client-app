@@ -1,91 +1,160 @@
-from flask import (Flask, render_template, redirect, url_for, request, 
-                   session, jsonify, flash, g)
+from flask import (Flask, render_template, redirect, url_for, flash, jsonify,
+                   request, session)
 from flask_session import Session
-from urllib.parse import unquote_plus  # to convert variables from url-format to normal
-from imap_tools import MailBox, AND, MailboxLoginError
 from secrets import token_hex
-# import imap_tools
-# import imaplib
-# import email
-from configs import SMPT_CONFIGS, IMAP_CONFIGS, POP_CONFIGS, SUPPORTED_EMAIL_PROVIDERS
-from database import create_database
-from forms import LoginForm
+from urllib.parse import unquote_plus  # to convert variables from url-format to normal
+from imap_tools import MailBox, MailboxLoginError, MailMessage
+from flask_mail import Mail, Message
+from util.database import create_database
+from util.configs import SMPT_CONFIGS, IMAP_CONFIGS, DEFAULT_FOLDERS
+from util.forms import LoginForm
+from util.actions import (create_folder_mapping, client_to_server_folder_name,
+                          are_credentials_valid)
 
 
 app = Flask(__name__)
-
 # Session
 app.config['SESSION_TYPE'] = 'filesystem'
 app.config['SESSION_PERMANENT'] = False
-
 # Database
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False  # prevent warning about future changes
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///emails.db'
-
 # WTForms needs a secret key (to protect against CSRF)
-app.config['SECRET_KEY'] = token_hex(16)  # '080dc86b48a799f61ab7bde438ca22bb'
+app.config['SECRET_KEY'] = token_hex(16)
 
 
 db, Email, Folder, Attachment = create_database(app)
 Session(app)
 
 
-def credentials_are_valid(email, password):
-    if not email or not password:
-        return False
+@app.route('/query_the_server', methods=['POST'])
+def query_the_server():
+    """ 
+    Query the email server.
+    This function is called by AJAX requests, with these required arguments:
+    - command: name of the function to do the action. Commands:
+    'get_n_messages', 'create_folder', ...
+
+    Arguments that depend on the command:
+    - folder
+    - uid
+    - 
+    """
+    email = session.get('email')
+    password = session.get('password')
     email_provider = email.split('@')[-1]
-    if email_provider not in SUPPORTED_EMAIL_PROVIDERS:
-        return False
     host = IMAP_CONFIGS[email_provider]['MAIL_SERVER']
     port = IMAP_CONFIGS[email_provider]['MAIL_PORT']
+    command = request.form['command']
     try:
-        with MailBox(host=host, port=port).login(email, password):
-            return True
-    except MailboxLoginError:
-        return False
+        mailbox = MailBox(host=host, port=port).login(email, password)
+        if command == 'create_folder':
+            folder = request.form['folder']
+            return create_folder(mailbox, folder)
+        elif command == 'get_n_messages':
+            folder = request.form['folder']
+            return get_n_messages(mailbox, folder)
+        elif command == 'move_to':
+            uid = request.form['uid']
+            return move_to(mailbox, uid, folder)
+        elif command == 'save_draft':
+            # uid = request.form['uid']
+            return save_draft(mailbox, uid, folder)
+    except:
+        return -1  # status code that there was an error
+    finally:
+        mailbox.logout()
+
+
+def create_folder(mailbox, folder):
+    mailbox.folder.create(folder)
+
+
+def get_n_messages(mailbox, folder, n=10):
+    mailbox.folder.set(folder)
+    messages = list(mailbox.fetch(limit=n, bulk=True, reverse=True))
+    for msg in messages:
+        # If message is not in database, add it
+        if not Email.query.filter_by(message_id=msg.message_id).first():
+            email = Email(message_id=msg.message_id, subject=msg.subject, 
+                          date=msg.date, text=msg.text, html=msg.html, 
+                          folder=folder)
+            db.session.add(email)
+            db.session.commit()
+            # Add attachments
+            for attachment in msg.attachments:
+                attachment = Attachment(filename=attachment.filename, 
+                                        content_type=attachment.content_type, 
+                                        data=attachment.payload, 
+                                        email=email)
+                db.session.add(attachment)
+                db.session.commit()
+                # Save attachment to disk
+                attachment.save_to_disk()
+    
+    # # Getting the attachments:
+    # for msg in msgs:
+    #     for att in msg.attachments:
+    #         print(att.filename, att.content_type)
+    #         with open('C:/1/{}'.format(att.filename), 'wb') as f:
+    #             f.write(att.payload)
+
+
+def move_to(mailbox, uid, folder):
+    server_folder = client_to_server_folder_name(folder, mailbox)
+    mailbox.move([uid], server_folder)
+
+
+def save_draft(mailbox, email):
+    # JS: sends all input fields
+    msg = create_msg() # construct email file
+    # save to the filesystem and database
+    server_folder = client_to_server_folder_name('drafts', mailbox)
+    mailbox.append(msg, 'INBOX', dt=None, flag_set=[imap_tools.MailMessageFlags.SEEN]) # issue command
+# subject, recipient, body, attachments
+
+### 
+
+def send(**kwargs):
+    email = session.get('email')
+    password = session.get('password')
+    email_provider = email.split('@')[-1]
+    app.config.update(SMPT_CONFIGS[email_provider])
+    user_config = {"MAIL_DEFAULT_SENDER": email,
+                   "MAIL_USERNAME": email,
+                   "MAIL_PASSWORD": password}
+    app.config.update(user_config)
+    mail = Mail(app)
+    msg = create_msg(**kwargs)
+    mail.send(msg)
 
 
 
-def create_folder_mapping(email_provider, server_folders):
-    """ Create mapping: client folder name -> server folder name """
-    folder_mapping = {}
-    if email_provider == 'gmail.com':
-        for server_folder in server_folders:
-            name = server_folder.name
-            flags = server_folder.flags
-            if name == 'INBOX':
-                folder_mapping['inbox'] = 'INBOX'
-            elif '[Gmail]' in name:
-                if '\\Sent' in flags:
-                    folder_mapping['sent'] = name
-                elif '\\Drafts' in flags:
-                    folder_mapping['drafts'] = name
-                elif '\\Trash' in flags:
-                    folder_mapping['bin'] = name
-            else:
-                folder_mapping[name] = name
-    elif email_provider == 'ukr.net':
-        folder_mapping['inbox'] = 'Inbox'
-        folder_mapping['sent'] = 'Sent'
-        folder_mapping['drafts'] = 'Drafts'
-        folder_mapping['bin'] = 'Trash'
-        UKR_NET_NAMES = ['Inbox', 'Sent', 'Drafts', 'Trash', 'Spam']
-        for server_folder in server_folders:
-            name = server_folder.name
-            if name not in UKR_NET_NAMES:
-                folder_mapping[name] = name
-    return folder_mapping
+def create_msg(subject, recipient, body, attachments):
+    """ Receives input fields needed for the email and constructs it """
+    msg = Message()
+    msg.subject = subject
+    msg.recipients = [recipient]
+    msg.body = body
+    # msg.attachments = attachments
+
+    # Add an attachment:
+    with app.open_resource("logo.png") as fp:
+        msg.attach(filename="logo.png", content_type="logo/png", data=fp.read())  # content_type is mimetype
+    
+    return msg
+
+
+
+
+
+
+
+
+
 
 
 ###
-
-def query_the_server():
-    """ Query the email server """
-    return jsonify()
-
-
-###
-
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
@@ -101,7 +170,6 @@ def index():
 def access_folder(folder, uuid=None):
     if not session.get('logged in'):
         return redirect(url_for('login'))
-    # Current email folder:
     current_folder = unquote_plus(folder)
     email = session.get('email')
     password = session.get('password')
@@ -114,7 +182,6 @@ def access_folder(folder, uuid=None):
             # Get the folder names on the server:
             server_folders = mailbox.folder.list()
             folder_mapping = create_folder_mapping(email_provider, server_folders)
-            DEFAULT_FOLDERS = ['inbox', 'sent', 'drafts', 'bin']
             user_folders = [folder for folder in folder_mapping if folder not in DEFAULT_FOLDERS]
             if current_folder not in DEFAULT_FOLDERS + user_folders:
                 return redirect(url_for('access_folder', folder='inbox', uuid=uuid))
@@ -127,14 +194,6 @@ def access_folder(folder, uuid=None):
             # return current_folder, folder_mapping, jsonify(msgs)
             # TODO: show folders and messages in selected folder
 
-        # # Getting the attachments:
-        # for msg in msgs:
-        #     for att in msg.attachments:
-        #         print(att.filename, att.content_type)
-        #         with open('C:/1/{}'.format(att.filename), 'wb') as f:
-        #             f.write(att.payload)
-
-        # emails_of_folder = db ...(folder_name)  # фильтр emails по названию папки базы данных
 
         # if uuid not in emails_of_folder, then uuid = uuid of the first email_of_folder.
         # if 0 emails_of_folder, this is a special case: the pages will be empty, and need a message.
@@ -164,7 +223,7 @@ def login():
         # If the form was submitted with data in the correct format:
         email = login_form.email.data
         password = login_form.password.data
-        if not credentials_are_valid(email, password):
+        if not are_credentials_valid(email, password):
             flash('Sorry, invalid email or password 😕', category='danger')
             return redirect(url_for('login'))
         # Save valid credentials to session:
@@ -187,68 +246,20 @@ def logout():
 
 
 
-# ### Sending emails
-
-# email = session.get('email')
-# password = session.get('password')
-
-# app.config.update(SMPT_CONFIGS[email_provider])
-
-# user_config = {"MAIL_DEFAULT_SENDER": user_email,
-#                "MAIL_USERNAME": user_email,
-#                "MAIL_PASSWORD": user_password}
-# app.config.update(user_config)
-
-# mail = Mail(app)
 
 
-# def create_msg(msg):
-#     msg.subject = "Hello"
-#     msg.recipients = ["fokow.vladimir@gmail.com"]
-#     msg.body = "Hey, sending you this email from my Flask app, lmk if it works"
-#     msg.html = '<b>Hey</b>, sending you this email from my <a href="#">Flask app</a>, lmk if it works'
-#     # subject – email subject header
-#     # recipients – list of email addresses
-#     # body – plain text message
-#     # html – HTML message
-#     # sender – email sender address, or MAIL_DEFAULT_SENDER by default
-#     # cc – CC list
-#     # bcc – BCC list
-#     # attachments – list of Attachment instances
-#     # reply_to – reply-to address
-#     # date – send date
-#     # charset – message character set
-#     # extra_headers – A dictionary of additional headers for the message
-#     # mail_options – A list of ESMTP options to be used in MAIL FROM command
-#     # rcpt_options – A list of ESMTP options to be used in RCPT commands
 
-#     # # Add an attachment:
-#     # with app.open_resource("logo.png") as fp:
-#     #     msg.attach(filename="logo.png", content_type="logo/png", data=fp.read())  # content_type is mimetype
-    
-#     return msg
-
-
-# # Send email:
-# if __name__ == '__main__':
-#     with app.app_context():
-#         msg = create_msg(Message())
-#         mail.send(msg)
-
-
+# TODO: Json will render messages from database only
 
 
 
 # TODO: add User table to the db, and user folder to the path where saving the emails
 
-# TODO: Implement moving emails from one folder to another
-# (emails are removed from inbox when moved into a folder. 
-# So there can be only in 1 folder at a time)
-
-
 
 # --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- 
-# Optional todos:
+# Optional TODOs:
+
+# relationship 1-to-Many, not m-n
 
 # can organize into a package (not as a module)
 

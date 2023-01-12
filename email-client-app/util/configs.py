@@ -50,3 +50,5 @@ POP_CONFIGS = {
 
 SUPPORTED_EMAIL_PROVIDERS = ['gmail.com', 'ukr.net']
 
+DEFAULT_FOLDERS = ['inbox', 'sent', 'drafts', 'bin']  # don't change
+
