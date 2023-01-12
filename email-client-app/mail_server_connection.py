@@ -1,5 +1,5 @@
 from imap_tools import MailBox, AND, MailboxLoginError
-from configs import SMPT_CONFIGS, IMAP_CONFIGS, POP_CONFIGS
+from configs import SMPT_CONFIGS, IMAP_CONFIGS, POP_CONFIGS, SUPPORTED_EMAIL_PROVIDERS
 from functools import wraps
 
 
@@ -11,27 +11,18 @@ class ConnectionStorage:
     Example:
     >>> conn_storage = ConnectionStorage()
     >>> # mailbox = conn_storage.get_connection()  # mailbox` is `None`
+    
     >>> try:
-    ...     conn_storage.create_connection(host='imap.gmail.com', port=993)
+    ...     mailbox = conn_storage.create_connection(email, password)
+    ...     # `mailbox` is `imap_tools.mailbox.MailBox` now
     ... except MailboxLoginError:
-    ...     ...
-    >>> conn_storage.get_connection()
-    Now `mailbox` is either `None` or `imap_tools.mailbox.MailBox`.
-    >>> 
+    ...     pass
+    >>> mailbox = conn_storage.get_connection()  
+    >>> # `mailbox` is `imap_tools.mailbox.MailBox` now (if no error)
+    
     >>> mailbox.close_connection()  # Remember to logout after you're done!
     """
     def __init__(self):
-        self.mailbox = None
-    
-
-    def get_connection(self):
-        return self.mailbox
-
-
-    def close_connection(self):
-        mailbox = self.get_connection()
-        if mailbox:
-            mailbox.logout()
         self.mailbox = None
     
 
@@ -46,15 +37,32 @@ class ConnectionStorage:
 
     @logout_beforehand
     def create_connection(self, email, password, folder='INBOX'):
+        """ Raises: MailboxLoginError if login failed. """
+        if not email:
+            raise MailboxLoginError('Empty email.')
+        if not password:
+            raise MailboxLoginError('Empty password.')
         email_provider = email.split('@')[-1]
-        if email_provider not in ['gmail.com', 'ukr.net']:
-            raise MailboxLoginError('Only gmail.com and ukr.net supported.')
+        if email_provider not in SUPPORTED_EMAIL_PROVIDERS:
+            raise MailboxLoginError(f'Only these email providers are supported: {", ".join(SUPPORTED_EMAIL_PROVIDERS)}')
         host = IMAP_CONFIGS[email_provider]['MAIL_SERVER']
         port = IMAP_CONFIGS[email_provider]['MAIL_PORT']
-        mailbox = MailBox(host=host, port=port).login(email, password, folder)
-        return mailbox
+        self.mailbox = MailBox(host=host, port=port).login(email, password, folder)
+        print(f'-----> logged in to: {email}')  # TODO: delete this line
+        return self.get_connection()
 
 
+    def get_connection(self):
+        return self.mailbox
+
+
+    def close_connection(self):
+        mailbox = self.get_connection()
+        if mailbox:
+            mailbox.logout()
+        self.mailbox = None
+
+    
     # def return_connection(self, conn):
     #     self.connections.append(conn)
 

@@ -47,3 +47,6 @@ POP_CONFIGS = {
                  MAIL_USE_SSL=True)
 }
 
+
+SUPPORTED_EMAIL_PROVIDERS = ['gmail.com', 'ukr.net']
+

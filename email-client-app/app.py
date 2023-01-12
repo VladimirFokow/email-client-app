@@ -22,8 +22,10 @@ print(f'\n\n---\n APP IS STARTING NOW !!!!!!!!!! -- {int(time.time() % 3600)} s 
 app = Flask(__name__)
 
 # Session
-app.config['SESSION_PERMANENT'] = False
 app.config['SESSION_TYPE'] = 'filesystem'
+app.config['SESSION_PERMANENT'] = True  #
+app.config['PERMANENT_SESSION_LIFETIME'] = 20 * 60  # seconds
+app.modified = True  # restart timer after user activity
 
 # Database
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False  # to prevent the warning (about the future version)
@@ -33,18 +35,22 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///emails.db'
 app.config['SECRET_KEY'] = secrets.token_hex(16)  # '080dc86b48a799f61ab7bde438ca22bb'
 
 
+
 conn_storage = ConnectionStorage()
+
+# mailbox.close_connection()
+
 
 @app.before_request
 def before_request():
     g.mailbox = conn_storage.get_connection()
 
 
-@app.teardown_request
-def teardown_request(exception):
-    mailbox = getattr(g, 'mailbox', None)
-    if mailbox is not None:
-        conn_storage.return_connection(mailbox)
+# @app.teardown_request
+# def teardown_request(exception):
+#     mailbox = getattr(g, 'mailbox', None)
+#     if mailbox is not None:
+#         mailbox.return_connection()
 
 
 
@@ -58,21 +64,21 @@ DEFAULT_FOLDERS = ['inbox', 'sent', 'drafts', 'bin']  # TODO: write to the db (i
 USER_FOLDERS = ['Folder 1', 'Folder 2']  # TODO: read from the db (excluding the default folders)
 
 
-def credentials_are_valid(email: str | None, password: str | None):
-    # return True  # TODO: delete. This is for testing only
-    if not email or not password:
-        return False
-    email_provider = email.split('@')[-1]
-    if email_provider not in ['gmail.com', 'ukr.net']:
-        return False
-    host = IMAP_CONFIGS[email_provider]['MAIL_SERVER']
-    port = IMAP_CONFIGS[email_provider]['MAIL_PORT']
-    try:
-        with MailBox(host=host, port=port).login(email, password):
-            print('--- Logging in to the server')
-            return True
-    except MailboxLoginError:
-        return False
+# def credentials_are_valid(email: str | None, password: str | None):
+#     # return True  # TODO: delete. This is for testing only
+#     if not email or not password:
+#         return False
+#     email_provider = email.split('@')[-1]
+#     if email_provider not in ['gmail.com', 'ukr.net']:
+#         return False
+#     host = IMAP_CONFIGS[email_provider]['MAIL_SERVER']
+#     port = IMAP_CONFIGS[email_provider]['MAIL_PORT']
+#     try:
+#         with MailBox(host=host, port=port).login(email, password):
+#             print('--- Logging in to the server')
+#             return True
+#     except MailboxLoginError:
+#         return False
 
 
 def create_folder_mapping(email_provider, server_folders):
@@ -130,6 +136,26 @@ def access_folder(folder, uuid=None):
     
     email = session.get('email')
     password = session.get('password')
+    
+    
+    
+    
+    mailbox = getattr(g, 'mailbox')  # do we currently have a connection to the server?
+    if not mailbox:
+        try:
+            mailbox = conn_storage.create_connection(email, password)
+        except MailboxLoginError:
+            return redirect(url_for('login'))
+        g.mailbox = mailbox  # save in case other 
+
+
+
+
+
+
+
+
+
     go_to_login = redirect(url_for('login'))
     if not email or not password:
         return go_to_login
@@ -186,6 +212,18 @@ def login():
     # Check if we are logged in already:
     email = session.get('email')
     password = session.get('password')
+
+
+
+
+
+
+
+
+
+
+
+
     if credentials_are_valid(email, password):
         return redirect(url_for('access_folder', folder='inbox'))
 
