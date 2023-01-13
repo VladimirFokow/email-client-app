@@ -1,0 +1,165 @@
+{% extends "layout.html" %}
+
+{% block extra_css %}
+  <link rel="stylesheet" href="{{ url_for('static', filename='mailbox.css') }}">
+{% endblock %}
+
+
+{% block body %}
+  <div class="header container-fluid fixed-top flex-md-nowrap">
+    <div class="row">
+
+      <div class="col-4 col-lg-5 px-0">
+        <div id="email-container">
+          <div id="header-email" data-bs-toggle="tooltip" data-bs-placement="bottom" title="copy to clipboard"> 
+            {{ session.email }}
+          </div>
+        </div>
+      </div>
+
+      <div class="col-8 col-lg-7">
+        <div class="h-100 d-flex align-items-center">
+          
+          <div id="tools-container" class="flex-grow-1">
+            <div id="header-tools"> 
+              (
+                
+                create new email 
+              | 
+              bin 
+              | 
+              move to
+
+              ) .. (
+
+                send 
+                | 
+                save draft
+
+                )
+            </div>
+          </div>
+          
+          <div>
+              <a href="{{ url_for('logout') }}" class="nav-link py-0 logout text-nowrap">
+                <span>Log out</span>
+                <img id="header-logo" src="{{ url_for('static', filename='img/logo.png') }}" alt="logo" />
+              </a>
+          </div>
+
+        </div>
+      </div>
+      
+    </div>
+  </div>
+
+  <div class="container-fluid">
+    <div class="row">
+      
+      <!-- Column 1: contains 2 sidebars -->
+      <div class="col-md-4 col-lg-5 sidebars-container">
+        <div class="row">
+          <!-- First sidebar -->
+          <nav class="col-lg-4 d-none d-lg-block bg-lighter sidebar">
+            <!--
+              col-lg-4: 4 columns wide on large screens and wider.
+              d-none is Bootstrap's "display: none" class.
+              d-lg-block is Bootstrap's "display: block" class for large screens and wider.
+              The reason why we need both is because d-none is a responsive class, and d-lg-block is a breakpoint class.  Responsive classes are applied at all screen sizes, while breakpoint classes are only applied at the specified screen size and larger.
+              bg-light: light grey background. A tiny little bit darker background that this is: #f8f9fa. A Bootstrap class for a tiny little bit darker background than this is bg-lighter.
+              sidebar: custom CSS (for both sidebars in common).
+            -->
+            <div class="sidebar-sticky">
+              <h6 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-2 mb-1 text-muted">
+                Favorites
+              </h6>
+
+              <ul class="nav flex-column">
+                <li class="nav-item">
+                  <a class="nav-link folder" href="{{ url_for('mailbox', _anchor='inbox/') }}">
+                    <span data-feather="inbox"></span>
+                    Inbox
+                  </a>
+                </li>
+                <li class="nav-item">
+                  <a class="nav-link folder" href="{{ url_for('mailbox', _anchor='sent/') }}">
+                    <span data-feather="send"></span>
+                    Sent
+                  </a>
+                </li>
+                <li class="nav-item">
+                  <a class="nav-link folder" href="{{ url_for('mailbox', _anchor='drafts/') }}">
+                    <span data-feather="file"></span>
+                    Drafts
+                  </a>
+                </li>
+                <li class="nav-item">
+                  <a class="nav-link folder" href="{{ url_for('mailbox', _anchor='bin/') }}">
+                    <span data-feather="trash-2"></span>
+                    Bin
+                  </a>
+                </li>
+              </ul>
+              
+              <h6 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-4 mb-1 text-muted">
+                <span>FOLDERS</span>
+                <a class="d-flex align-items-center text-muted" href="#">  <!-- TODO- add JavaScript window popup to create a folder --> 
+                  <span data-feather="plus-circle"></span>
+                </a>
+              </h6>
+              
+              <div id="user-folders">
+                <!-- JavaScript will add folders here -->
+              </div>
+              
+            </div>
+          </nav>
+          
+          <!-- Second sidebar -->
+          <nav class="col-lg-8 d-none d-md-block bg-light sidebar">
+            <div class="sidebar-sticky">
+              <div class="list-group list-group-flush mt-2" id="msg-list">
+                <!--
+                  list-group: list-group-items will be styled like cards (will have a border and a background color).
+                  list-group-flush: remove borders between list group items.
+                -->
+                <!-- JavaScript will add email list here -->
+              </div>
+            </div>
+          </nav>
+          
+        </div>  <!-- End of row that contains 2 sidebars -->
+      </div>  <!-- End of column 1 -->
+      
+      
+      
+      <!-- Column 2: the Main area -->
+      <main role="main" class="col-md-8 col-lg-7 ms-sm-auto px-4">
+        
+        <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-2 mt-2 pb-2 mb-3 border-bottom">
+          <h2>Email subject</h2>
+          <h5>address_from@gmail.com</h5>
+        </div>
+
+        <!--
+          {/{ email.header }}
+          {/{ email.body }} 
+          {/{ email.date }}
+        -->
+        <!--  { show_email(opened_email) if uid else show_blank_page() } -->
+        
+        <h2>Email info</h2>
+        <p>email contents</p>
+        
+        
+        
+      </main>
+    </div>
+  </div>
+{% endblock %}
+
+
+{% block extra_js %}
+  <script src="{{ url_for('static', filename='mailbox.js') }}"></script>
+{% endblock %}
+

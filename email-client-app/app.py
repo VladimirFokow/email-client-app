@@ -3,42 +3,45 @@ from flask import (Flask, render_template, redirect, url_for, flash, jsonify,
 from flask_session import Session
 from secrets import token_hex
 from urllib.parse import unquote_plus  # to convert variables from url-format to normal
-from imap_tools import MailBox, MailboxLoginError, MailMessage
-from flask_mail import Mail, Message
-from util.database import create_database
+from imap_tools import (MailBox, MailboxLoginError, MailMessage, MailMessageFlags,
+                        MailboxFolderCreateError)
+import flask_mail  # flask_mail.Mail, flask_mail.Message, flask_mail.Attachment
+from util.database import get_models
+from sqlalchemy.exc import SQLAlchemyError, DataError, IntegrityError
 from util.configs import SMPT_CONFIGS, IMAP_CONFIGS, DEFAULT_FOLDERS
 from util.forms import LoginForm
-from util.actions import (create_folder_mapping, client_to_server_folder_name,
+from util.actions import (get_user_folders,
+                          client_to_server_folder_name, 
                           are_credentials_valid)
 
 
 app = Flask(__name__)
-# Session
+# Session:
 app.config['SESSION_TYPE'] = 'filesystem'
-app.config['SESSION_PERMANENT'] = False
-# Database
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False  # prevent warning about future changes
+app.config['SESSION_PERMANENT'] = False  # TODO: does this influence the browser-wide session? test it
+# Database:
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False  # to prevent warning about future changes
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///emails.db'
-# WTForms needs a secret key (to protect against CSRF)
+# WTForms needs a secret key (to protect against CSRF):
 app.config['SECRET_KEY'] = token_hex(16)
 
 
-db, Email, Folder, Attachment = create_database(app)
+db, Email, Folder, Attachment, User = get_models(app)
 Session(app)
 
 
 @app.route('/query_the_server', methods=['POST'])
 def query_the_server():
     """ 
-    Query the email server.
-    This function is called by AJAX requests, with these required arguments:
-    - command: name of the function to do the action. Commands:
-    'get_n_messages', 'create_folder', ...
+    Query the email server, also updating the local database (if needed).
 
-    Arguments that depend on the command:
+    This function is executed by AJAX requests, with the required argument:
+    - command
+
+    Additional required arguments, depending on the command:
     - folder
     - uid
-    - 
+    - recipient, subject, body, attachments
     """
     email = session.get('email')
     password = session.get('password')
@@ -51,53 +54,109 @@ def query_the_server():
         if command == 'create_folder':
             folder = request.form['folder']
             return create_folder(mailbox, folder)
-        elif command == 'get_n_messages':
+        elif command == 'get_folders_and_n_messages':
             folder = request.form['folder']
-            return get_n_messages(mailbox, folder)
+            return get_folders_and_n_messages(mailbox, folder)
         elif command == 'move_to':
             uid = request.form['uid']
+            folder = request.form['folder']
             return move_to(mailbox, uid, folder)
         elif command == 'save_draft':
-            # uid = request.form['uid']
-            return save_draft(mailbox, uid, folder)
-    except:
-        return -1  # status code that there was an error
+            recipient = request.form['recipient']
+            subject = request.form['subject']
+            body = request.form['body']
+            attachments = []
+            # for file in files:
+            #     with app.open_resource("logo.png") as fp:
+            #         attachments.append(flask_mail.Attachment(
+            #             filename="logo.png", content_type="logo/png", data=fp.read()
+            #         ))  # (content_type is mimetype)
+            smtp_msg = create_smtp_msg(recipient, subject, body, attachments)
+            return save_to_drafts(mailbox, email_provider, )
     finally:
         mailbox.logout()
 
 
+# These functions are used by the AJAX function above:
+# (they all also update the local database if needed)
+
 def create_folder(mailbox, folder):
-    mailbox.folder.create(folder)
+    # To the server:
+    try:
+        mailbox.folder.create(folder)
+    except MailboxFolderCreateError as e:
+        # could not create folder on the server
+        return jsonify({'success': False, 'error': str(e)})
 
-
-def get_n_messages(mailbox, folder, n=10):
-    mailbox.folder.set(folder)
-    messages = list(mailbox.fetch(limit=n, bulk=True, reverse=True))
-    for msg in messages:
-        # If message is not in database, add it
-        if not Email.query.filter_by(message_id=msg.message_id).first():
-            email = Email(message_id=msg.message_id, subject=msg.subject, 
-                          date=msg.date, text=msg.text, html=msg.html, 
-                          folder=folder)
-            db.session.add(email)
-            db.session.commit()
-            # Add attachments
-            for attachment in msg.attachments:
-                attachment = Attachment(filename=attachment.filename, 
-                                        content_type=attachment.content_type, 
-                                        data=attachment.payload, 
-                                        email=email)
-                db.session.add(attachment)
-                db.session.commit()
-                # Save attachment to disk
-                attachment.save_to_disk()
+    # To the local database:
+    try:
+        folder = Folder(name=folder)
+        db.session.add(folder)
+        db.session.commit()
+    except (DataError, IntegrityError) as e:
+        # DataError - folder already exists
+        # IntegrityError - folder name too long
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)})
     
-    # # Getting the attachments:
-    # for msg in msgs:
-    #     for att in msg.attachments:
-    #         print(att.filename, att.content_type)
-    #         with open('C:/1/{}'.format(att.filename), 'wb') as f:
-    #             f.write(att.payload)
+    return jsonify({'success': True})
+
+
+def get_folders_and_n_messages(mailbox, folder, n=10):
+    # .. from the server
+    user_folders = get_user_folders(mailbox)  # list of user folder names
+
+    # Get or create owner in database:
+    owner_email = session['email']
+    owner = db.session.execute(db.select(User).where(User.username == owner_email)).scalar_one()
+    if not owner:
+        owner = User(username=owner_email)
+        db.session.add(owner)
+        db.session.commit()
+
+    server_folder = client_to_server_folder_name(folder, mailbox)
+    mailbox.folder.set(server_folder)
+    messages = list(mailbox.fetch(limit=n, bulk=True, reverse=True))
+    msg_infos = []
+    for msg in messages:
+        msg_info = {
+            'uid': msg.uid,
+            'date': msg.date.isoformat(),
+            'from_': msg.from_,
+            'to': msg.to[0],
+            'subject': msg.subject,
+            'text': msg.text,
+        }
+        msg_infos.append(msg_info)
+
+        # If message is not in database - add it:
+        # filter by the owner as well
+        email_exists = db.session.execute(db.select(Email).where(Email.uid == msg.uid).where(Email.owner == owner)).first()
+        if not email_exists:
+            email = Email(owner=owner, **msg_info)
+            email.date = msg.date  # datetime, not string
+            db.session.add(email)
+
+            # # TODO: process attachments
+            # for att in msg.attachments:
+            #     path = f'C:/1/{att.filename}'
+            #     # Save_to_disk:
+            #     with open(path, 'wb') as f:
+            #         f.write(att.payload)
+            #     attachment = Attachment(filename=att.filename, 
+            #                             content_type=att.content_type, 
+            #                             path=path, 
+            #                             email=email)  # TODO: can I add like this? or do I need to add the email_id?
+            #     db.session.add(attachment)
+    
+    try:
+        db.session.commit()
+    except SQLAlchemyError as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)})
+    
+    data = {'user_folders': user_folders, 'msg_infos': msg_infos}
+    return jsonify({'success': True, 'data': data})
 
 
 def move_to(mailbox, uid, folder):
@@ -105,17 +164,53 @@ def move_to(mailbox, uid, folder):
     mailbox.move([uid], server_folder)
 
 
-def save_draft(mailbox, email):
-    # JS: sends all input fields
-    msg = create_msg() # construct email file
-    # save to the filesystem and database
+def save_to_drafts(mailbox, smtp_msg):
     server_folder = client_to_server_folder_name('drafts', mailbox)
-    mailbox.append(msg, 'INBOX', dt=None, flag_set=[imap_tools.MailMessageFlags.SEEN]) # issue command
-# subject, recipient, body, attachments
+    mailbox.append(smtp_msg, server_folder, dt=None, flag_set=[MailMessageFlags.DRAFT])
+    # TODO: also save to the filesystem and database
+    # TODO: also save attachments
 
-### 
 
-def send(**kwargs):
+### Other functions
+
+# # Query only the database
+# @app.route('/query_db', methods=['POST'])
+# def query_db():
+#     ...
+
+
+# Flask-Mail (smtp) to imap_tools (imap)
+def smpt_to_imap_type(smtp_msg):
+    """ 
+    Converts a `Flask-Mail` message to an `imap_tools` message 
+    (need in imap_tools to save email to drafts)
+    """
+    pass
+    # imap_msg = MailMessage()
+    # imap_msg.message_id = smtp_msg.message_id
+    # imap_msg.subject = smtp_msg.subject
+    # imap_msg.date = smtp_msg.date
+    # imap_msg.text = smtp_msg.body
+    # imap_msg.html = smtp_msg.html
+    # imap_msg.attachments = smtp_msg.attachments
+    # return imap_msg
+
+
+def create_smtp_msg(recipient, subject, body, attachments):
+    """ 
+    Receives input fields needed for the email, and creates it 
+    using `Flask-Mail`: smtp (for sending).
+    """
+    msg = flask_mail.Message()
+    msg.subject = subject
+    msg.recipients = [recipient]
+    msg.body = body
+    msg.attachments = attachments
+    return msg
+
+
+# Must be run with app context:
+def send(msg):
     email = session.get('email')
     password = session.get('password')
     email_provider = email.split('@')[-1]
@@ -124,25 +219,11 @@ def send(**kwargs):
                    "MAIL_USERNAME": email,
                    "MAIL_PASSWORD": password}
     app.config.update(user_config)
-    mail = Mail(app)
-    msg = create_msg(**kwargs)
+    mail = flask_mail.Mail(app)
     mail.send(msg)
 
 
 
-def create_msg(subject, recipient, body, attachments):
-    """ Receives input fields needed for the email and constructs it """
-    msg = Message()
-    msg.subject = subject
-    msg.recipients = [recipient]
-    msg.body = body
-    # msg.attachments = attachments
-
-    # Add an attachment:
-    with app.open_resource("logo.png") as fp:
-        msg.attach(filename="logo.png", content_type="logo/png", data=fp.read())  # content_type is mimetype
-    
-    return msg
 
 
 
@@ -152,72 +233,75 @@ def create_msg(subject, recipient, body, attachments):
 
 
 
+### Routes:
 
-
-###
-
-@app.route('/', methods=['GET', 'POST'])
+@app.route('/')
 def index():
+    return redirect(url_for('mailbox'))
+
+
+
+@app.route('/mailbox', methods=['GET', 'POST'])
+def mailbox():
     if not session.get('logged in'):
         return redirect(url_for('login'))
-    ...
-    # return redirect(url_for('access_folder', folder='inbox'))
+    return render_template('mailbox.html', title='Mailbox')
 
 
-# These routes will be changed
-@app.route('/<folder>/', methods=['GET', 'POST'])
-@app.route('/<folder>/<uuid>', methods=['GET', 'POST'])
-def access_folder(folder, uuid=None):
-    if not session.get('logged in'):
-        return redirect(url_for('login'))
-    current_folder = unquote_plus(folder)
-    email = session.get('email')
-    password = session.get('password')
-    email_provider = email.split('@')[-1]
-    host = IMAP_CONFIGS[email_provider]['MAIL_SERVER']
-    port = IMAP_CONFIGS[email_provider]['MAIL_PORT']
-    try:
-        with MailBox(host=host, port=port).login(email, password) as mailbox:
-            print('--- Logging in to the server')
-            # Get the folder names on the server:
-            server_folders = mailbox.folder.list()
-            folder_mapping = create_folder_mapping(email_provider, server_folders)
-            user_folders = [folder for folder in folder_mapping if folder not in DEFAULT_FOLDERS]
-            if current_folder not in DEFAULT_FOLDERS + user_folders:
-                return redirect(url_for('access_folder', folder='inbox', uuid=uuid))
+# # This is the old implementation 
+# @app.route('/<folder>/', methods=['GET', 'POST'])
+# @app.route('/<folder>/<uuid>', methods=['GET', 'POST'])
+# def access_folder(folder, uuid=None):
+#     if not session.get('logged in'):
+#         return redirect(url_for('login'))
+#     current_folder = unquote_plus(folder)
+#     email = session.get('email')
+#     password = session.get('password')
+#     email_provider = email.split('@')[-1]
+#     host = IMAP_CONFIGS[email_provider]['MAIL_SERVER']
+#     port = IMAP_CONFIGS[email_provider]['MAIL_PORT']
+#     try:
+#         with MailBox(host=host, port=port).login(email, password) as mailbox:
+#             print('--- Logging in to the server')
+#             # Get the folder names on the server:
+#             server_folders = mailbox.folder.list()
+#             folder_mapping = create_folder_mapping(email_provider, server_folders)
+#             user_folders = [folder for folder in folder_mapping if folder not in DEFAULT_FOLDERS]
+#             if current_folder not in DEFAULT_FOLDERS + user_folders:
+#                 return redirect(url_for('access_folder', folder='inbox', uuid=uuid))
 
-            # Render the latest N emails in the current folder 
-            # (not to overload our app with ALL the emails)
-            N = 10
-            mailbox.folder.set(folder_mapping[current_folder])
-            msgs = list(mailbox.fetch(limit=N, reverse=True, bulk=True))
-            # return current_folder, folder_mapping, jsonify(msgs)
-            # TODO: show folders and messages in selected folder
+#             # Render the latest N emails in the current folder 
+#             # (not to overload our app with ALL the emails)
+#             N = 10
+#             mailbox.folder.set(folder_mapping[current_folder])
+#             msgs = list(mailbox.fetch(limit=N, reverse=True, bulk=True))
+#             # return current_folder, folder_mapping, jsonify(msgs)
+#             # TODO: show folders and messages in selected folder
 
 
-        # if uuid not in emails_of_folder, then uuid = uuid of the first email_of_folder.
-        # if 0 emails_of_folder, this is a special case: the pages will be empty, and need a message.
-        #     # how to select an email? /folder/uuid ?
-        # opened_email = ... find email by uuid. Else None.
+#         # if uuid not in emails_of_folder, then uuid = uuid of the first email_of_folder.
+#         # if 0 emails_of_folder, this is a special case: the pages will be empty, and need a message.
+#         #     # how to select an email? /folder/uuid ?
+#         # opened_email = ... find email by uuid. Else None.
         
-        return render_template('access_folder.html', 
-                            title='Email Client',
-                            user_folders=user_folders,
-                            folder=folder,
-                            uuid=uuid,
-                            #    emails_of_folder=emails_of_folder,  # json
-                            #    opened_email=opened_email,  # json
-                            )
+#         return render_template('access_folder.html', 
+#                             title='Email Client',
+#                             user_folders=user_folders,
+#                             folder=folder,
+#                             uuid=uuid,
+#                             #    emails_of_folder=emails_of_folder,  # json
+#                             #    opened_email=opened_email,  # json
+#                             )
         
-    except MailboxLoginError:
-        return redirect(url_for('login'))
+#     except MailboxLoginError:
+#         return redirect(url_for('login'))
     
 
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if session.get('logged in'):
-        return redirect(url_for('access_folder', folder='inbox'))
+        return redirect(url_for('index'))
     login_form = LoginForm()
     if login_form.validate_on_submit():
         # If the form was submitted with data in the correct format:
@@ -230,7 +314,13 @@ def login():
         session['email'] = email
         session['password'] = password
         session['logged in'] = True
-        return redirect(url_for('access_folder', folder='inbox'))
+        # Create user in database if doesn't exist:
+        user = db.session.execute(db.select(User).where(User.username == email)).first()
+        if not user:
+            user = User(username=email)
+            db.session.add(user)
+            db.session.commit()
+        return redirect(url_for('index'))
     
     return render_template('login.html', title='Log in', form=login_form)
 
@@ -249,12 +339,6 @@ def logout():
 
 
 
-# TODO: Json will render messages from database only
-
-
-
-# TODO: add User table to the db, and user folder to the path where saving the emails
-
 
 # --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- --- 
 # Optional TODOs:
@@ -266,7 +350,7 @@ def logout():
 # add Check Constraint on email fields: nullable=False if not a draft
 # https://dba.stackexchange.com/questions/42469/constraints-based-on-other-columns
 
-# and for importance from 1 to 5:
+# and for importance level for email (from 1 to 5):
 # CREATE TABLE YourSchema.YourTable(YourColumn INT NOT NULL CONSTRAINT CHK_YourTable_YourColumn_ValidLimits
 # CHECK(YourColumn BETWEEN 1 AND 5),
 # SomeOtherColumns VARCHAR(10)
@@ -274,14 +358,7 @@ def logout():
 
 
 
-
-
-
-
-
-
-
-# Insert this to the log in form: 
+# Insert this into the log-in form: 
 
 # Due to security reasons, email providers do not allow to use your main email 
 # password to log into your account with third-party email clients (like this one)
@@ -315,6 +392,6 @@ def logout():
 
 
 
-# TODO: after taking the login email address from the form - str.lower()
+# Optional TODO: after taking the login email address from the form - str.lower()
 
 
