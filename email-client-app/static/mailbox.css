@@ -170,6 +170,7 @@ body {
 
 .sidebar .nav-link.active {
   color: #2470dc;
+  background-color: rgba(0, 0, 0, 0.08);
 }
 
 .sidebar .nav-link:hover .feather,

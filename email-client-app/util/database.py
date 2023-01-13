@@ -48,7 +48,8 @@ def get_models(app):
 
     class Folder(db.Model):
         folder_id = db.Column('id', db.Integer, primary_key=True)
-        name = db.Column(db.String(MAX_FOLDER_NAME_LEN), nullable=False, unique=True)
+        owner_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+        name = db.Column(db.String(MAX_FOLDER_NAME_LEN), nullable=False)
         def __repr__(self):
             return f"<Folder(folder_id={self.folder_id}, name={self.name})>"
 
@@ -71,6 +72,7 @@ def get_models(app):
         username = db.Column(db.String(MAX_EMAIL_ADDR_LEN), unique=True, nullable=False)  # user's email address
         
         emails = db.relationship('Email', backref='owner', lazy=True)  # all ids of this user's emails
+        folders = db.relationship('Folder', backref='owner', lazy=True)  # all ids of this user's folders
         def __repr__(self):
             return f"<User(id={self.id}, username={self.username})>"
 

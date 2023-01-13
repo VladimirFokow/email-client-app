@@ -76,25 +76,25 @@
 
               <ul class="nav flex-column">
                 <li class="nav-item">
-                  <a class="nav-link folder" href="{{ url_for('mailbox', _anchor='inbox/') }}">
+                  <a id="inbox" class="nav-link folder" href="{{ url_for('mailbox', _anchor='inbox/') }}">  <!-- href="#inbox/" -->
                     <span data-feather="inbox"></span>
                     Inbox
                   </a>
                 </li>
                 <li class="nav-item">
-                  <a class="nav-link folder" href="{{ url_for('mailbox', _anchor='sent/') }}">
+                  <a id="sent" class="nav-link folder" href="{{ url_for('mailbox', _anchor='sent/') }}">  <!-- href="#sent/" -->
                     <span data-feather="send"></span>
                     Sent
                   </a>
                 </li>
                 <li class="nav-item">
-                  <a class="nav-link folder" href="{{ url_for('mailbox', _anchor='drafts/') }}">
+                  <a id="drafts" class="nav-link folder" href="{{ url_for('mailbox', _anchor='drafts/') }}">  <!-- href="#drafts/" -->
                     <span data-feather="file"></span>
                     Drafts
                   </a>
                 </li>
                 <li class="nav-item">
-                  <a class="nav-link folder" href="{{ url_for('mailbox', _anchor='bin/') }}">
+                  <a id="bin" class="nav-link folder" href="{{ url_for('mailbox', _anchor='bin/') }}">  <!-- href="#bin/" -->
                     <span data-feather="trash-2"></span>
                     Bin
                   </a>
@@ -103,7 +103,7 @@
               
               <h6 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-4 mb-1 text-muted">
                 <span>FOLDERS</span>
-                <a class="d-flex align-items-center text-muted" href="#">  <!-- TODO- add JavaScript window popup to create a folder --> 
+                <a class="d-flex align-items-center text-muted">  <!-- TODO- add JavaScript window popup to create a folder. Also make this not an <a> but a button, so that the url doesn't change when clicking it. -->
                   <span data-feather="plus-circle"></span>
                 </a>
               </h6>
@@ -118,12 +118,34 @@
           <!-- Second sidebar -->
           <nav class="col-lg-8 d-none d-md-block bg-light sidebar">
             <div class="sidebar-sticky">
-              <div class="list-group list-group-flush mt-2" id="msg-list">
+              <div class="list-group list-group-flush mt-2" id="msglist">
                 <!--
                   list-group: list-group-items will be styled like cards (will have a border and a background color).
                   list-group-flush: remove borders between list group items.
                 -->
                 <!-- JavaScript will add email list here -->
+                
+
+                <!-- FOR DEBUGGING -- START -->
+                        <!-- <p class="text-muted small px-3 mb-1 pt-0">2 messages</p>
+                        <a href="/mailbox#a/p0/show/4" class="list-group-item list-group-item-action py-2 lh-sm" data-bs-toggle="list">
+                          <div class="d-flex w-100 align-items-center justify-content-between">
+                            <strong class="col-9 mb-1 line-clamp-1">Subject 1</strong>
+                            <small>01.01.2021</small>
+                          </div>
+                          <div class="mb-1 small line-clamp-2">Text 1</div>
+                        </a>
+                        <div class="horizontal-divider"></div>
+                        <a href="/mailbox#a/p0/show/3" class="list-group-item list-group-item-action py-2 lh-sm" data-bs-toggle="list">
+                          <div class="d-flex w-100 align-items-center justify-content-between">
+                            <strong class="col-9 mb-1 line-clamp-1">Subject 2</strong>
+                            <small>02.02.2022</small>
+                          </div>
+                          <div class="mb-1 small line-clamp-2">Text 2</div>
+                        </a>
+                        <div class="horizontal-divider"></div> -->
+                <!-- FOR DEBUGGING -- STOP -->
+
               </div>
             </div>
           </nav>

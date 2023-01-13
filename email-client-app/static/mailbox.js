@@ -166,7 +166,7 @@ function render_user_folders(user_folders) {
         a += ' active'
       }
       a += '" '
-      a += 'href="/mailbox#' + user_folder + '/">'
+      a += 'href="#' + user_folder + '/">'
       a += '<span data-feather="folder"></span> ' + user_folder
       a += '</a>'
       
@@ -191,7 +191,7 @@ function render_msg_list(msg_infos) {
   html += '<p class="text-muted small px-3 mb-1 pt-0">' + n_msgs + ' messages</p>'
   for (let msg of msg_infos) {
     let uid = msg.uid
-    let date = new Date(msg.dt)
+    let date = new Date(msg.date)
     let from_ = msg.from_
     let to = msg.to
     let subject = msg.subject
@@ -207,16 +207,29 @@ function render_msg_list(msg_infos) {
     // data-bs-toggle="list" automatically adds the active class to the current list group item
     a += '<div class="d-flex w-100 align-items-center justify-content-between">'
     a += '<strong class="col-9 mb-1 line-clamp-1">' + subject + '</strong>'
-    a += '<small>' + date.toDateString() + '</small>'
+    a += '<small>' + date.toLocaleDateString().replace(/\//g, '.') + '</small>'
     a += '</div>'
     a += '<div class="mb-1 small line-clamp-2">' + text + '</div>'
     a += '</a>'
     html += a
     
-    html += '<div class="horizontal divider"></div>'
+    html += '<div class="horizontal-divider"></div>'
   }
 
-  $("#msg-list").html(html)
+  $("#msglist").html(html)
+
+  // Example of resulting `html` variable:
+
+  // <p class="text-muted small px-3 mb-1 pt-0">2 messages</p>
+  // <a href="/mailbox#a/p0/show/4" class="list-group-item list-group-item-action py-2 lh-sm" data-bs-toggle="list">
+  //   <div class="d-flex w-100 align-items-center justify-content-between">
+  //     <strong class="col-9 mb-1 line-clamp-1">Subject 1</strong>
+  //     <small>01.01.2021</small>
+  //   </div>
+  //   <div class="mb-1 small line-clamp-2">Text 1</div>
+  // </a>
+  // <div class="horizontal divider"></div>
+
 }
 
 
@@ -227,17 +240,21 @@ function update_page_content(path) {
   let mode = parts[2]
 
   // AJAX request:
-  if (mode == 'show') { // TODO: add support for mode == write
-    let uid = parts[3]
+  if (mode == 'show') { // TODO: also add support for mode == write
+    let uid = get_or_null(parts, 3)
     $.post(
       "/query_the_server",
       {
         command: 'get_folders_and_n_messages',
         folder: folder,
-        // page: page
+        // page: page  // TODO: add support for pagination
       },
 
       function(data, status) {
+        current_folder = window.location.hash.split('/')[0].slice(1)
+        if (current_folder !== folder) {
+          return
+        }
         if (!data.success) {
           console.log('error: ' + data.error)
         } else {
@@ -246,7 +263,7 @@ function update_page_content(path) {
           let msg_infos = data.msg_infos
           render_user_folders(user_folders)
           render_msg_list(msg_infos)
-          // TOTO: render the message on the right - by uid
+          // render_message_content(uid)  // TODO: create this functino
         }
       }
     );
@@ -278,6 +295,7 @@ function render_page() {
   // Update the page hash and page content:
   let path = window.location.hash  // e.g. "#inbox/"
   let corrected_path = correct_path(path)  // e.g. "#inbox/p0/show/123"
+  
   if (corrected_path != path) {
     window.location.hash = corrected_path  // set the corrected path
   } else {
@@ -286,7 +304,25 @@ function render_page() {
 }
 
 
-window.onload = render_page
+function set_default_folder_active() {
+  folder = window.location.hash.split('/')[0].slice(1)
+  if (folder === 'inbox') {
+    $("#inbox").addClass("active")
+  } else if (folder === 'sent') {
+    $("#sent").addClass("active")
+  } else if (folder === 'drafts') {
+    $("#drafts").addClass("active")
+  } else if (folder === 'bin') {
+    $("#bin").addClass("active")
+  }
+}
+
+
+window.onload = function() {
+  set_default_folder_active()
+  render_page()
+}
+
 window.addEventListener('hashchange', render_page);
 
 
@@ -307,12 +343,13 @@ function add_listeners_to_all_folders() {
   // Loop through the folders and add the active class to the current/clicked folder
   let folders = $(".folder");  // all folder buttons
   for (let i = 0; i < folders.length; i++) {
-    folders[i].addEventListener("click", become_active);
+    folders[i].addEventListener("click", become_active);  
+    // TODO: move this activation of all folders from here to the hashchange event. 
+    // If folder one of the standard ones - choose by id, else can add an id to 
+    // user folders to set their active class like this: $("#folder-name").addClass("active")
   }
 }
 add_listeners_to_all_folders();
-// We need a semicolon at the end here because the function is not in a
-// block, so it is not automatically terminated by a closing curly brace.
 
 
 

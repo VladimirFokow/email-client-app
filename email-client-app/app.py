@@ -2,13 +2,12 @@ from flask import (Flask, render_template, redirect, url_for, flash, jsonify,
                    request, session)
 from flask_session import Session
 from secrets import token_hex
-from urllib.parse import unquote_plus  # to convert variables from url-format to normal
-from imap_tools import (MailBox, MailboxLoginError, MailMessage, MailMessageFlags,
+from imap_tools import (MailBox, MailMessage, MailMessageFlags,
                         MailboxFolderCreateError)
 import flask_mail  # flask_mail.Mail, flask_mail.Message, flask_mail.Attachment
 from util.database import get_models
 from sqlalchemy.exc import SQLAlchemyError, DataError, IntegrityError
-from util.configs import SMPT_CONFIGS, IMAP_CONFIGS, DEFAULT_FOLDERS
+from util.configs import SMPT_CONFIGS, IMAP_CONFIGS
 from util.forms import LoginForm
 from util.actions import (get_user_folders,
                           client_to_server_folder_name, 
@@ -18,7 +17,7 @@ from util.actions import (get_user_folders,
 app = Flask(__name__)
 # Session:
 app.config['SESSION_TYPE'] = 'filesystem'
-app.config['SESSION_PERMANENT'] = False  # TODO: does this influence the browser-wide session? test it
+# app.config['SESSION_PERMANENT'] = False  # TODO: does this influence the browser-wide session? test it
 # Database:
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False  # to prevent warning about future changes
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///emails.db'
@@ -49,14 +48,13 @@ def query_the_server():
     host = IMAP_CONFIGS[email_provider]['MAIL_SERVER']
     port = IMAP_CONFIGS[email_provider]['MAIL_PORT']
     command = request.form['command']
-    try:
-        mailbox = MailBox(host=host, port=port).login(email, password)
-        if command == 'create_folder':
-            folder = request.form['folder']
-            return create_folder(mailbox, folder)
-        elif command == 'get_folders_and_n_messages':
+    with MailBox(host=host, port=port).login(email, password) as mailbox:
+        if command == 'get_folders_and_n_messages':
             folder = request.form['folder']
             return get_folders_and_n_messages(mailbox, folder)
+        elif command == 'create_folder':
+            folder = request.form['folder']
+            return create_folder(mailbox, folder)
         elif command == 'move_to':
             uid = request.form['uid']
             folder = request.form['folder']
@@ -73,8 +71,6 @@ def query_the_server():
             #         ))  # (content_type is mimetype)
             smtp_msg = create_smtp_msg(recipient, subject, body, attachments)
             return save_to_drafts(mailbox, email_provider, )
-    finally:
-        mailbox.logout()
 
 
 # These functions are used by the AJAX function above:
@@ -94,8 +90,8 @@ def create_folder(mailbox, folder):
         db.session.add(folder)
         db.session.commit()
     except (DataError, IntegrityError) as e:
-        # DataError - folder already exists
-        # IntegrityError - folder name too long
+        # DataError - if folder already exists
+        # IntegrityError - if folder name is too long
         db.session.rollback()
         return jsonify({'success': False, 'error': str(e)})
     
@@ -103,22 +99,30 @@ def create_folder(mailbox, folder):
 
 
 def get_folders_and_n_messages(mailbox, folder, n=10):
-    # .. from the server
-    user_folders = get_user_folders(mailbox)  # list of user folder names
 
-    # Get or create owner in database:
+    # Email of the owner of the account:
     owner_email = session['email']
     owner = db.session.execute(db.select(User).where(User.username == owner_email)).scalar_one()
     if not owner:
-        owner = User(username=owner_email)
-        db.session.add(owner)
-        db.session.commit()
+        return jsonify({'success': False, 'error': 'User not found in database'})
 
+    # Fetch all owner's folders from the server
+    user_folders = get_user_folders(mailbox)  # list of user folder names
+
+    # .. and add them to the local database:
+    for folder_name in user_folders:
+        folder_object = Folder(name=folder_name, owner=owner)
+        db.session.add(folder_object)
+
+    # Fetch n owner's emails from the server:
     server_folder = client_to_server_folder_name(folder, mailbox)
     mailbox.folder.set(server_folder)
     messages = list(mailbox.fetch(limit=n, bulk=True, reverse=True))
+
+    # .. and add them to the local database:
     msg_infos = []
     for msg in messages:
+        # Prepare the message info (to be returned):
         msg_info = {
             'uid': msg.uid,
             'date': msg.date.isoformat(),
@@ -155,6 +159,7 @@ def get_folders_and_n_messages(mailbox, folder, n=10):
         db.session.rollback()
         return jsonify({'success': False, 'error': str(e)})
     
+    # Return owner's emails and folders:
     data = {'user_folders': user_folders, 'msg_infos': msg_infos}
     return jsonify({'success': True, 'data': data})
 
@@ -254,6 +259,7 @@ def mailbox():
 # def access_folder(folder, uuid=None):
 #     if not session.get('logged in'):
 #         return redirect(url_for('login'))
+#     # from urllib.parse import unquote_plus  # to convert variables from url-format to normal
 #     current_folder = unquote_plus(folder)
 #     email = session.get('email')
 #     password = session.get('password')
@@ -314,12 +320,18 @@ def login():
         session['email'] = email
         session['password'] = password
         session['logged in'] = True
-        # Create user in database if doesn't exist:
+
+        # If the user in the database doesn't exist:
+        # - create the user
         user = db.session.execute(db.select(User).where(User.username == email)).first()
         if not user:
             user = User(username=email)
             db.session.add(user)
             db.session.commit()
+        # TODO:
+        # - create the user's default folders: inbox, sent, drafts, trash
+        # - fetch all the users emails and folders from the server, and save them also to the database
+
         return redirect(url_for('index'))
     
     return render_template('login.html', title='Log in', form=login_form)
