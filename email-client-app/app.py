@@ -7,7 +7,7 @@ from imap_tools import (MailBox, MailMessage, MailMessageFlags,
 import flask_mail  # flask_mail.Mail, flask_mail.Message, flask_mail.Attachment
 from util.database import get_models
 from sqlalchemy.exc import SQLAlchemyError, DataError, IntegrityError
-from util.configs import SMPT_CONFIGS, IMAP_CONFIGS
+from util.configs import SMTP_CONFIGS, IMAP_CONFIGS
 from util.forms import LoginForm
 from util.actions import (get_user_folders,
                           client_to_server_folder_name, 
@@ -201,7 +201,7 @@ def save_to_drafts(mailbox, smtp_msg):
 
 
 # Flask-Mail (smtp) to imap_tools (imap)
-def smpt_to_imap_type(smtp_msg):
+def smtp_to_imap_type(smtp_msg):
     """ 
     Converts a `Flask-Mail` message to an `imap_tools` message 
     (need in imap_tools to save email to drafts)
@@ -237,7 +237,7 @@ def send(recipient, subject, body, attachments):
     email = session.get('email')
     password = session.get('password')
     email_provider = email.split('@')[-1]
-    app.config.update(SMPT_CONFIGS[email_provider])
+    app.config.update(SMTP_CONFIGS[email_provider])
     user_config = {"MAIL_DEFAULT_SENDER": email,
                    "MAIL_USERNAME": email,
                    "MAIL_PASSWORD": password}

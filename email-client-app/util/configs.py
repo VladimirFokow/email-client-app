@@ -1,7 +1,7 @@
 """Configuration details"""
 
 # For sending
-SMPT_CONFIGS = {
+SMTP_CONFIGS = {
     'gmail.com': dict(MAIL_SERVER='smtp.gmail.com',
                       MAIL_PORT=465,  # 587 if TLS=True, SSL=False
                       MAIL_USE_TLS=False,

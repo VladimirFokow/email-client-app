@@ -3,7 +3,7 @@ Flask-Session  # have a session
 flask-sqlalchemy  # use a database (to store email details)
 Flask-WTF  # secure forms (with input validation)
 email_validator  # WTForms needs this (to validate emails)
-Flask-Mail  # send emails (wraps smptlib)
+Flask-Mail  # send emails (wraps smtplib)
 imap-tools  # read emails and manipulate the remote mailbox (wraps imaplib)
 
 
