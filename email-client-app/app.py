@@ -29,6 +29,22 @@ db, Email, Folder, Attachment, User = get_models(app)
 Session(app)
 
 
+@app.route('/send_email', methods=['POST'])
+def send_email():
+    """ Send an email """
+    recipient = request.form['to']
+    subject = request.form.get('subject', '')
+    body = request.form.get('text', '')
+    attachments = request.form.get('attachments', [])
+    send(recipient, subject, body, attachments)    
+    return jsonify({'success': True})
+
+
+@app.route('/save_draft', methods=['POST'])
+def save_draft():
+    return
+
+
 @app.route('/query_the_server', methods=['POST'])
 def query_the_server():
     """ 
@@ -60,10 +76,10 @@ def query_the_server():
             folder = request.form['folder']
             return move_to(mailbox, uid, folder)
         elif command == 'save_draft':
-            recipient = request.form['recipient']
-            subject = request.form['subject']
-            body = request.form['body']
-            attachments = []
+            recipient = request.form.get('recipient')
+            subject = request.form.get('subject')
+            body = request.form.get('body')
+            attachments = request.form.get('body')
             # for file in files:
             #     with app.open_resource("logo.png") as fp:
             #         attachments.append(flask_mail.Attachment(
@@ -201,21 +217,23 @@ def smpt_to_imap_type(smtp_msg):
     # return imap_msg
 
 
+# Must be run with app context:
 def create_smtp_msg(recipient, subject, body, attachments):
     """ 
+    Can use only after `mail = flask_mail.Mail(app)`.
     Receives input fields needed for the email, and creates it 
     using `Flask-Mail`: smtp (for sending).
     """
-    msg = flask_mail.Message()
-    msg.subject = subject
-    msg.recipients = [recipient]
-    msg.body = body
-    msg.attachments = attachments
-    return msg
+    smtp_msg = flask_mail.Message()
+    smtp_msg.subject = subject
+    smtp_msg.recipients = [recipient]
+    smtp_msg.body = body
+    smtp_msg.attachments = attachments
+    return smtp_msg
 
 
 # Must be run with app context:
-def send(msg):
+def send(recipient, subject, body, attachments):
     email = session.get('email')
     password = session.get('password')
     email_provider = email.split('@')[-1]
@@ -225,7 +243,8 @@ def send(msg):
                    "MAIL_PASSWORD": password}
     app.config.update(user_config)
     mail = flask_mail.Mail(app)
-    mail.send(msg)
+    smtp_msg = create_smtp_msg(recipient, subject, body, attachments)
+    mail.send(smtp_msg)
 
 
 

@@ -22,7 +22,6 @@ body {
 * Header
 */
 
-
 .header {
   background-color: var(--header-bg-color);
   box-shadow: 0 1px 3px var(--shadow-color);
@@ -97,6 +96,20 @@ body {
   scrollbar-width: none;  /* Firefox */
 }
 
+/* Buttons */
+#header-tools .action {
+  border-color: transparent;
+  color: #333; 
+  padding-top: 0.1rem;
+  padding-bottom: 0.2rem;
+  margin: 0.4rem 0.1rem 0;
+}
+#header-tools .action:hover {
+  border-color: #2471dc90;
+  background-color: #2471dc25;
+  color: inherit;
+}
+
 /* Logout */
 
 #header-logo {
@@ -124,37 +137,26 @@ body {
   height: 16px;
 }
 
-.sidebars-container {
+#area-below-header {
   position: fixed;
-  top: 0;
-  bottom: 0;
-  left: 0;
-  z-index: 100; /* Behind the header */
+  top: calc(var(--header-height));
 }
 
 .sidebar-sticky {
-  position: relative;
-  top: 0;
   height: calc(100vh - var(--header-height));
-  padding-top: .5rem;
+  padding-top: 1rem;
   overflow-x: hidden;
-  overflow-y: auto; /* Scrollable contents if viewport is shorter than content. */
-}
-
-@supports ((position: -webkit-sticky) or (position: sticky)) {
-  .sidebar-sticky {
-    position: -webkit-sticky;
-    position: sticky;
-  }
+  overflow-y: auto;  /* Scrollable contents if viewport is shorter than content. */
 }
 
 .sidebar {
-  padding: var(--header-height) 0 0;  /* Height of header */
   box-shadow: inset -1px 0 0 var(--shadow-color);  /* Vertical line on the right */
+  padding: 0;
 }
 
-/* First .sidebar child of the .sidebars .row class: */
-.sidebars-container .row > .sidebar:first-child {
+/* First child of this element: #area-below-header .row > .sidebar
+* (`space` means any child, `>` means direct child) */
+#area-below-header .row > .sidebar:first-child {
   background-color: rgba(108, 117, 125, 0.15); /* light grey background */
 }
 
@@ -188,6 +190,18 @@ body {
   font-style: italic;
 }
 
+#new-folder:hover {
+  cursor: pointer;
+  background-color: #cde1face;
+  border-radius: 2rem;
+  color: black !important;
+}
+/* To make the background color larger than the button #new-folder itself: */
+#new-folder {
+  padding: 0.3rem 0.8rem;
+  margin: -0.3rem -0.5rem;
+}
+
 
 /* 
 * Middle column
@@ -206,7 +220,7 @@ body {
 }
 
 .message-list-item:not(.active):hover {
-  /* Remove the change of color on hover: */
+  /* To remove change of color on hover: */
   color: inherit;
 }
 
@@ -244,10 +258,11 @@ body {
 */
 
 main {
-  padding-top: var(--header-height);
+  height: calc(100vh - var(--header-height));
+  overflow-y: auto; 
+
   overflow-wrap: anywhere;  /* Break words if needed */
 }
-
 
 
 /* Other helpful classes */

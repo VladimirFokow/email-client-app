@@ -22,21 +22,17 @@
           
           <div id="tools-container" class="flex-grow-1">
             <div id="header-tools"> 
-              (
-                
-                create new email 
-              | 
-              bin 
-              | 
-              move to
-
-              ) .. (
-
-                send 
-                | 
-                save draft
-
-                )
+              <button class="action btn btn-outline-primary btn-sm" id="create"> create new email </button>
+              <button class="action btn btn-outline-primary btn-sm" id="delete"> bin </button>
+              <button class="action btn btn-outline-primary btn-sm" id="move"> move to </button>  <!-- TODO- make this a dropdown listing all the folders -->
+              
+              <!-- These buttons are in the "create new email" page. Here they can be different, e.g. forward, reply...-->
+              <!-- space break:  -->
+              <!--
+                <span class="mx-4"></span>
+                <button class="action btn btn-outline-primary btn-sm" id="send"> send </button>
+                <button class="action btn btn-outline-primary btn-sm" id="save"> save draft </button>
+               -->
             </div>
           </div>
           
@@ -53,11 +49,11 @@
     </div>
   </div>
 
-  <div class="container-fluid">
+  <div class="container-fluid" id="area-below-header">
     <div class="row">
       
       <!-- Column 1: contains 2 sidebars -->
-      <div class="col-md-4 col-lg-5 sidebars-container">
+      <div class="sidebars-container col-md-4 col-lg-5">
         <div class="row">
           <!-- First sidebar -->
           <nav class="col-lg-4 d-none d-lg-block bg-lighter sidebar">
@@ -103,9 +99,9 @@
               
               <h6 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-4 mb-1 text-muted">
                 <span>FOLDERS</span>
-                <a class="d-flex align-items-center text-muted">  <!-- TODO- add JavaScript window popup to create a folder. Also make this not an <a> but a button, so that the url doesn't change when clicking it. -->
+                <div class="d-flex align-items-center text-muted" id="new-folder">  <!-- TODO- add JavaScript window popup to create a folder. -->
                   <span data-feather="plus-circle"></span>
-                </a>
+                </div>
               </h6>
               
               <div id="user-folders">
@@ -134,7 +130,7 @@
       
 
       <!-- Column 2: the Main area -->
-      <main role="main" class="col-md-8 col-lg-7 ms-sm-auto px-4">
+      <main role="main" class="col col-md-8 col-lg-7 px-4">
         <!-- JavaScript will add email contents here -->
       </main>
 

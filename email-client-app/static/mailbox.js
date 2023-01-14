@@ -182,6 +182,7 @@ function render_user_folders(user_folders, folder) {
 
 function create_render_msg_func(msg) {
   // When an email message is selected - this function will be called:
+  // (for each email message - a unique function)
   function render_msg() {
     // Add the "active" class to the selected message, and remove it from the others:
     $(".message-list-item").removeClass("active")
@@ -260,7 +261,7 @@ function create_msg_list_item(msg, folder, page) {
 
 
 function render_msg_list(msg_infos, folder, page) {
-  let msg_list = document.getElementById('msg-list')
+  let msg_list = $('#msg-list')[0]
   msg_list.innerHTML = ''
 
   // Add number of messages:
@@ -282,19 +283,225 @@ function render_msg_list(msg_infos, folder, page) {
 }
 
 
+// When send email button is clicked:
+function send_email() {
+  let to = $("#write_to").val()
+  let subject = $("#write_subject").val()
+  let text = $("#write_text").val()
+  $.post(
+    "/send_email",
+    {
+      to: to,
+      subject: subject,
+      text: text,
+      // attachments: attachments  // TODO
+    },
+    function(data, status) {
+      if (!data.success) {
+        console.log('error: ' + data.error)
+      } else {
+        console.log('success')
+      }
+    }
+  );
+}
+
+
+
+// When save draft button is clicked:
+function save_draft() {
+  let to = $("#write_to").val()
+  let subject = $("#write_subject").val()
+  let text = $("#write_text").val()
+  $.post(
+    "/save_draft",
+    {
+      to: to,
+      subject: subject,
+      text: text,
+      // attachments: attachments  // TODO
+    },
+    function(data, status) {
+      if (!data.success) {
+        console.log('error: ' + data.error)
+      } else {
+        console.log('success')
+      }
+    }
+  );
+}
+
+
+function empty_email_write_page() {
+  // A new empty element with forms to write an email:
+  let container = document.createElement('div')
+  container.classList.add('pt-3', 'pb-4')
+
+  // `container` will have such forms to enter data:
+  // To
+  // Subject
+  // Text
+  // Add attachments
+  // Send button
+  // Save draft button
+
+  let form = document.createElement('form')
+  form.classList.add('pt-2')
+
+  // To: id="write_to"
+  let to = document.createElement('div')
+  to.classList.add('form-group', 'mb-3')
+  let to_label = document.createElement('label')
+  to_label.setAttribute('for', 'write_to')
+  to_label.innerText = 'To:'
+  let to_input = document.createElement('input')
+  to_input.classList.add('form-control', 'mt-1')
+  to_input.setAttribute('type', 'text')
+  to_input.setAttribute('id', 'write_to')
+  to_input.setAttribute('placeholder', 'Enter email')
+  to.appendChild(to_label)
+  to.appendChild(to_input)
+
+  // Subject: id="write_subject"
+  let subject = document.createElement('div')
+  subject.classList.add('form-group', 'mb-3')
+  let subject_label = document.createElement('label')
+  subject_label.setAttribute('for', 'write_subject')
+  subject_label.innerText = 'Subject:'
+  let subject_input = document.createElement('input')
+  subject_input.classList.add('form-control', 'mt-1')
+  subject_input.setAttribute('type', 'text')
+  subject_input.setAttribute('id', 'write_subject')
+  subject_input.setAttribute('placeholder', 'Enter subject')
+  subject.appendChild(subject_label)
+  subject.appendChild(subject_input)
+  
+  // Text: id="write_text"
+  let text = document.createElement('div')
+  text.classList.add('form-group', 'mb-3')
+  let text_label = document.createElement('label')
+  text_label.setAttribute('for', 'write_text')
+  text_label.innerText = 'Text:'
+  let text_input = document.createElement('textarea')
+  text_input.classList.add('form-control', 'mt-1')
+  text_input.setAttribute('id', 'write_text')
+  text_input.setAttribute('rows', '6')
+  text.appendChild(text_label)
+  text.appendChild(text_input)
+
+  // Attachments: id="attach_input"
+  let attach_container = document.createElement('div')
+  attach_container.classList.add('form-group', 'mb-3')
+  let attach_icon = document.createElement('span')
+  attach_icon.setAttribute('data-feather', 'paperclip')
+  attach_icon.classList.add('me-2')
+  let attach_label = document.createElement('label')
+  attach_label.setAttribute('for', 'attach_input')
+  attach_label.innerText = 'Attachments:'
+  let attach_input = document.createElement('input')
+  attach_input.setAttribute('id', 'attach_input')
+  attach_input.classList.add('form-control', 'mt-1')
+  attach_input.setAttribute('type', 'file')
+  attach_input.setAttribute('multiple', 'multiple')
+  
+  // After attaching the files - the user can view their list:
+  let attach_ul = document.createElement('ul')
+  attach_ul.classList.add('mt-2')
+  attach_ul.setAttribute('id', 'attach_ul')
+  // When the user uploads files:
+  attach_input.onchange = function() {
+    // Remove all previous files:
+    let attach_ul = $('#attach_ul')[0]
+    attach_ul.innerHTML = ''
+    // Render them in `attach_ul`:
+    let files = attach_input.files
+    let n_files = files.length
+    for (let i = 0; i < n_files; i++) {
+      let file_li = document.createElement('li')
+      file_li.innerText = files[i].name
+      attach_ul.appendChild(file_li)
+    }
+  }
+  
+  // Button to remove all the attached files:
+  let delete_button = document.createElement('button')
+  delete_button.classList.add('btn', 'btn-outline-danger', 'mt-2', 'py-1', 'px-2')
+  delete_button.setAttribute('type', 'button')
+  let delete_button_icon = document.createElement('span')
+  delete_button_icon.setAttribute('data-feather', 'trash')
+  delete_button_icon.classList.add('me-2')
+  delete_button.append(delete_button_icon)
+  delete_button.append('Remove attachments')
+  delete_button.onclick = function() {
+    // Remove all files:
+    let attach_ul = $('#attach_ul')[0]
+    attach_ul.innerHTML = ''
+    // Remove all files from `attach_input`:
+    let attach_input = $('#attach_input')[0]
+    attach_input.value = ''
+    }
+
+  attach_container.appendChild(attach_icon)
+  attach_container.appendChild(attach_label)
+  attach_container.appendChild(attach_input)
+  attach_container.appendChild(attach_ul)
+  attach_container.appendChild(delete_button)
+
+  // Send button:
+  let send = document.createElement('button')
+  send.classList.add('btn', 'btn-primary')
+  send.setAttribute('type', 'submit')
+  send.innerText = 'Send'
+  send.onclick = send_email
+
+  // Save draft button:
+  let save = document.createElement('button')
+  save.classList.add('btn', 'btn-secondary', 'ml-2', 'mx-3')
+  save.setAttribute('type', 'button')
+  save.innerText = 'Save draft'
+  // save.onclick = save_draft  // TODO- save draft
+
+  form.appendChild(to)
+  form.appendChild(subject)
+  form.appendChild(text)
+  form.appendChild(attach_container)
+  form.appendChild(send)
+  form.appendChild(save)
+
+  container.appendChild(form)
+  return container
+}
+
+
+function render_email_write_page(draft, uid) {
+  let container = empty_email_write_page()
+  if (draft !== 'draft' || !uid) {
+    // New page with empty fields:
+    $("main").html(container)
+  } else {
+    // TODO- get the email from the drafts 
+    // and fill in its contents in the forms of a container.
+    $("main").html(container)
+  }
+  activate_feather_icons()
+}
+
+
 function update_page_content(path) {
   let parts = path.split( '/' );  // path must be already in the correct format
   let folder = parts[0].slice(1)  // remove '#' from the beginning
   let page = parts[1]
   let mode = parts[2]
 
-  if (mode == 'show') {  // TODO- also add support for mode == write
+  if (mode == 'show') {
     let uid = get_or_null(parts, 3)
     if (uid) {
       // Note: this is a temporary measure. 
       // But in the future (after refactoring) there will be even less server requests.
       return
     }
+
+    $('#msg-list')[0].innerHTML = ''  // clear the msg-list
     // AJAX request:
     $.post(
       "/query_the_server",
@@ -322,9 +529,14 @@ function update_page_content(path) {
       }
     );
   } 
-  // else if (mode == 'write') {
-  //   return  // TODO: add support for mode == write
-  // }
+
+  // TODO- when opening saved draft emails - their link should be '...write/draft/uid' (not '...show/uid') )
+  else if (mode == 'write') {
+    // Display a new page with forms for writing a new email:
+    let draft = get_or_null(parts, 3)
+    let uid = get_or_null(parts, 4)
+    render_email_write_page(draft, uid)
+  }
 }
 // Optional TODOs: 
 // -
@@ -350,16 +562,16 @@ function render_page() {
   let path = window.location.hash  // e.g. "#inbox/"
   let corrected_path = correct_path(path)  // e.g. "#inbox/p0/show/123"
   
-  if (corrected_path != path) {
+  if (corrected_path != path) {   // need to change the path:
     window.location.hash = corrected_path  // set the corrected path
   } else {
-    update_page_content(path)
+    update_page_content(path)  // render the actual content
   }
 }
 
 
 function set_default_folder_active() {
-  folder = window.location.hash.split('/')[0].slice(1)
+  let folder = window.location.hash.split('/')[0].slice(1)
   if (folder === 'inbox') {
     $("#inbox").addClass("active")
   } else if (folder === 'sent') {
@@ -377,7 +589,7 @@ window.onload = function() {
   render_page()
 }
 
-window.addEventListener('hashchange', render_page);
+window.addEventListener('hashchange', render_page)
 
 
 
@@ -411,8 +623,6 @@ add_listeners_to_all_folders();
 // 
 
 
-
-
 // TODO (good style): 
 // When loading the page - use the DATABASE for fast initial emails
 
@@ -437,4 +647,18 @@ add_listeners_to_all_folders();
 // You have to escape special characters with a double backslash:
 // $('#\\/about\\/')
 // )
+
+
+
+
+// ---------------------------------------------------------------------
+
+// Create new email button:
+$("#create").click(function() {
+  let parts = window.location.hash.split('/')
+  let folder = parts[0].slice(1)
+  let page = parts[1]
+  window.location.hash = '#' + folder + '/' + page + '/write'
+})
+
 
