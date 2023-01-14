@@ -459,7 +459,6 @@ function empty_email_write_page() {
   save.classList.add('btn', 'btn-secondary', 'ml-2', 'mx-3')
   save.setAttribute('type', 'button')
   save.innerText = 'Save draft'
-  // save.onclick = save_draft  // TODO- save draft
 
   form.appendChild(to)
   form.appendChild(subject)
@@ -479,8 +478,6 @@ function render_email_write_page(draft, uid) {
     // New page with empty fields:
     $("main").html(container)
   } else {
-    // TODO- get the email from the drafts 
-    // and fill in its contents in the forms of a container.
     $("main").html(container)
   }
   activate_feather_icons()
@@ -538,23 +535,6 @@ function update_page_content(path) {
     render_email_write_page(draft, uid)
   }
 }
-// Optional TODOs: 
-// -
-// compare with the previous path (in history),
-// detect which part has changed
-// and update only this part on the page
-// -
-// compare with the previous path (in history),
-// detect which part has changed
-// and update only this part on the page
-// -
-// in callback: write to html only if the url is still the same
-// so that if the user has clicked away - not to update the new page
-// -
-// show an error page with some info if an error occurs in Python while handling the AJAX request
-// -
-// show empty page if no email selected
-
 
 
 function render_page() {
@@ -610,45 +590,9 @@ function add_listeners_to_all_folders() {
   let folders = $(".folder");  // all folder buttons
   for (let i = 0; i < folders.length; i++) {
     folders[i].addEventListener("click", become_active);  
-    // TODO: move this activation of all folders from here to the hashchange event. 
-    // If folder one of the standard ones - choose by id, else can add an id to 
-    // user folders to set their active class like this: $("#folder-name").addClass("active")
   }
 }
 add_listeners_to_all_folders();
-
-
-
-// ---------------------------------------------------------------------
-// 
-
-
-// TODO (good style): 
-// When loading the page - use the DATABASE for fast initial emails
-
-// if loading the page for the first time (window.onload) - then (disregarding the future clicks between folders - even with the clicks the data must still load), query the email server and save the results to the database 100%, and update the page contents again
-
-// Subsequently, query the server only in this case: on the button click
-// Question: can we somehow listen to the incoming emails, and update page when a new email comes in? // in a pinch, can query the server just every 2 mins
-
-// When clicking the buttons, can:
-// - either use Bootstrap's  data-bs-toggle="list"  (all information will be present in the dom, just not shown)
-// - or load all the data into the onclick events - so it will be stored in the javascript, and inserted on click
-
-///
-// On successful log in - maybe already send the request to the database for the data?
-
-// when querying the server - must query for EVERYTHING! (not only new emails, but also new folders, moved emails, deleted emails, trash updates, drafts, etc.... so much... how to do it?)
-        
-
-
-// info not needed anymore?:
-// (
-// You have to escape special characters with a double backslash:
-// $('#\\/about\\/')
-// )
-
-
 
 
 // ---------------------------------------------------------------------

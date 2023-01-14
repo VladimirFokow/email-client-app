@@ -5,9 +5,3 @@ Flask-WTF  # secure forms (with input validation)
 email_validator  # WTForms needs this (to validate emails)
 Flask-Mail  # send emails (wraps smptlib)
 imap-tools  # read emails and manipulate the remote mailbox (wraps imaplib)
-
-
-# email  # ? instead of these two:
-#   eml-parser  # to extract information from .eml files
-#   emlx  # parse emails on MacOS
-

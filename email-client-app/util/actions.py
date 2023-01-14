@@ -72,8 +72,3 @@ def are_credentials_valid(email, password):
     except MailboxLoginError:
         return False
 
-#######################################################
-
-
-
-
