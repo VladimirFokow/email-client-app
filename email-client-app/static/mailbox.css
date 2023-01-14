@@ -193,7 +193,7 @@ body {
 * Middle column
 */
 
-.list-group-item {
+.message-list-item {
   background-color: transparent;
   border: 0;
   padding-left: var(--distance-left);
@@ -201,16 +201,16 @@ body {
   height: 4.5rem; 
 }
 
-.list-group-item:hover {
+.message-list-item:hover {
   box-shadow: inset -1px 0 0 var(--shadow-color);
 }
 
-.list-group-item:not(.active):hover {
+.message-list-item:not(.active):hover {
   /* Remove the change of color on hover: */
   color: inherit;
 }
 
-.list-group-item.active {
+.message-list-item.active {
   width: calc(100% - var(--margin-of-selection) * 2);
   margin-left: var(--margin-of-selection);
   margin-right: var(--margin-of-selection);
@@ -243,8 +243,9 @@ body {
 * Main content
 */
 
-[role="main"] {
+main {
   padding-top: var(--header-height);
+  overflow-wrap: anywhere;  /* Break words if needed */
 }
 
 

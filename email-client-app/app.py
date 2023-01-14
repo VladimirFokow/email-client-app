@@ -17,7 +17,7 @@ from util.actions import (get_user_folders,
 app = Flask(__name__)
 # Session:
 app.config['SESSION_TYPE'] = 'filesystem'
-# app.config['SESSION_PERMANENT'] = False  # TODO: does this influence the browser-wide session? test it
+app.config['SESSION_PERMANENT'] = True  # TODO: does this influence the browser-wide session? test it
 # Database:
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False  # to prevent warning about future changes
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///emails.db'

@@ -118,64 +118,26 @@
           <!-- Second sidebar -->
           <nav class="col-lg-8 d-none d-md-block bg-light sidebar">
             <div class="sidebar-sticky">
-              <div class="list-group list-group-flush mt-2" id="msglist">
+              <div class="list-group list-group-flush mt-2" id="msg-list">
                 <!--
                   list-group: list-group-items will be styled like cards (will have a border and a background color).
                   list-group-flush: remove borders between list group items.
                 -->
                 <!-- JavaScript will add email list here -->
-                
-
-                <!-- FOR DEBUGGING -- START -->
-                        <!-- <p class="text-muted small px-3 mb-1 pt-0">2 messages</p>
-                        <a href="/mailbox#a/p0/show/4" class="list-group-item list-group-item-action py-2 lh-sm" data-bs-toggle="list">
-                          <div class="d-flex w-100 align-items-center justify-content-between">
-                            <strong class="col-9 mb-1 line-clamp-1">Subject 1</strong>
-                            <small>01.01.2021</small>
-                          </div>
-                          <div class="mb-1 small line-clamp-2">Text 1</div>
-                        </a>
-                        <div class="horizontal-divider"></div>
-                        <a href="/mailbox#a/p0/show/3" class="list-group-item list-group-item-action py-2 lh-sm" data-bs-toggle="list">
-                          <div class="d-flex w-100 align-items-center justify-content-between">
-                            <strong class="col-9 mb-1 line-clamp-1">Subject 2</strong>
-                            <small>02.02.2022</small>
-                          </div>
-                          <div class="mb-1 small line-clamp-2">Text 2</div>
-                        </a>
-                        <div class="horizontal-divider"></div> -->
-                <!-- FOR DEBUGGING -- STOP -->
-
               </div>
             </div>
           </nav>
-          
+
         </div>  <!-- End of row that contains 2 sidebars -->
       </div>  <!-- End of column 1 -->
       
       
-      
+
       <!-- Column 2: the Main area -->
       <main role="main" class="col-md-8 col-lg-7 ms-sm-auto px-4">
-        
-        <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-2 mt-2 pb-2 mb-3 border-bottom">
-          <h2>Email subject</h2>
-          <h5>address_from@gmail.com</h5>
-        </div>
-
-        <!--
-          {/{ email.header }}
-          {/{ email.body }} 
-          {/{ email.date }}
-        -->
-        <!--  { show_email(opened_email) if uid else show_blank_page() } -->
-        
-        <h2>Email info</h2>
-        <p>email contents</p>
-        
-        
-        
+        <!-- JavaScript will add email contents here -->
       </main>
+
     </div>
   </div>
 {% endblock %}

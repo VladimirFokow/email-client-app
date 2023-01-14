@@ -1,12 +1,11 @@
 // ---------------------------------------------------------------------
 
 // Activate feather icons:
-(function () {
+function activate_feather_icons() {
   'use strict'  // "strict mode" - can't use undeclared variables
   feather.replace() 
-}())
-// (it is an IIFE - Immediately Invoked Function Expression. It is called 
-// immediately after its definition, because of the () at the end)
+}
+activate_feather_icons()
 
 
 // Activate tooltips (hints when hovering over an element):
@@ -151,26 +150,24 @@ function correct_path(path) {
 }
 
 
-function render_user_folders(user_folders) {
+function render_user_folders(user_folders, folder) {
   // TODO: when rendering the user folders, their active class disappears if not added here (is there a better way to do this? e.g. from database)
   // TODO: rendering user folders takes too much time, if not taked from the database
   let html = ''
-  let folder = window.location.hash.split('/')[0].slice(1)
   if (user_folders.length > 0) {
     html = '<ul class="nav flex-column mb-2">'
     for (let user_folder of user_folders) {
       html += '<li class="nav-item text-nowrap">'
 
-      let a = '<a class="nav-link folder'
+      let a = document.createElement('a')
+      a.classList.add('nav-link', 'folder')
       if (folder === user_folder) {
-        a += ' active'
+        a.classList.add('active')
       }
-      a += '" '
-      a += 'href="#' + user_folder + '/">'
-      a += '<span data-feather="folder"></span> ' + user_folder
-      a += '</a>'
-      
-      html += a
+      a.href = '#' + user_folder + '/'
+      a.innerHTML = '<span data-feather="folder"></span> ' + user_folder
+
+      html += a.outerHTML
       html += '</li>'
     }
     html += '</ul>'
@@ -178,18 +175,19 @@ function render_user_folders(user_folders) {
     html = '<p class="text-muted small-message">You have no folders.</p>'
   }
   $("#user-folders").html(html)
+  activate_feather_icons()
   add_listeners_to_all_folders()
 }
 
 
-function render_msg_list(msg_infos) {
-  let html = ''
-  let parts = window.location.hash.split('/')
-  let folder = parts[0].slice(1)
-  let page = parts[1]
-  let n_msgs = msg_infos.length
-  html += '<p class="text-muted small px-3 mb-1 pt-0">' + n_msgs + ' messages</p>'
-  for (let msg of msg_infos) {
+function create_render_msg_func(msg) {
+  // When an email message is selected - this function will be called:
+  function render_msg() {
+    // Add the "active" class to the selected message, and remove it from the others:
+    $(".message-list-item").removeClass("active")
+    $(this).addClass("active")
+
+    // Render the message (set the contents of $("main")):
     let uid = msg.uid
     let date = new Date(msg.date)
     let from_ = msg.from_
@@ -197,39 +195,90 @@ function render_msg_list(msg_infos) {
     let subject = msg.subject
     let text = msg.text
 
-    let a = '<a href="/mailbox#' + folder + '/' + page + '/show/' + uid + '" '
-    a += 'class="list-group-item list-group-item-action py-2 lh-sm" data-bs-toggle="list">'  
-    // list-group-item: make the element a list-group-item.
-    // list-group-item-action: necessary for it to be clickable.
-    // py-2: padding to top and bottom of 0.5rem each.
-    // lh-sm: line-height small (interval between lines).
-    // active: highlight the current list group item.
-    // data-bs-toggle="list" automatically adds the active class to the current list group item
-    a += '<div class="d-flex w-100 align-items-center justify-content-between">'
-    a += '<strong class="col-9 mb-1 line-clamp-1">' + subject + '</strong>'
-    a += '<small>' + date.toLocaleDateString().replace(/\//g, '.') + '</small>'
-    a += '</div>'
-    a += '<div class="mb-1 small line-clamp-2">' + text + '</div>'
-    a += '</a>'
-    html += a
+    let container = document.createElement('div')
+    container.classList.add('pt-3', 'pb-4')
+
+    let info1 = document.createElement('div')
+    info1.classList.add('mt-2', 'd-flex', 'flex-nowrap', 'justify-content-between')
+
+    let p1 = document.createElement('p')
+    p1.classList.add('line-clamp-1')
+    p1.innerHTML = 'From: ' + '<span class="text-muted">' + from_ + '</span>'
+    let small = document.createElement('small')
+    small.innerText = date.toLocaleDateString()
+    info1.appendChild(p1)
+    info1.appendChild(small)
     
-    html += '<div class="horizontal-divider"></div>'
+    let info2 = document.createElement('div')
+    info2.classList.add('border-bottom')
+    let p2 = document.createElement('p')
+    p2.innerHTML = 'To: ' + '<span class="text-muted">' + to + '</span>'
+    let h3 = document.createElement('h3')
+    h3.innerText = subject
+    info2.appendChild(p2)
+    info2.appendChild(h3)
+
+    let email_text = document.createElement('div')
+    email_text.classList.add('pt-4')
+    email_text.innerText = text
+    
+    container.appendChild(info1)
+    container.appendChild(info2)
+    container.appendChild(email_text)
+
+    $("main").html(container)
   }
+  return render_msg
+}
 
-  $("#msglist").html(html)
 
-  // Example of resulting `html` variable:
+function create_msg_list_item(msg, folder, page) {
+  let uid = msg.uid
+  let date = new Date(msg.date)
+  let subject = msg.subject
+  let text = msg.text
 
-  // <p class="text-muted small px-3 mb-1 pt-0">2 messages</p>
-  // <a href="/mailbox#a/p0/show/4" class="list-group-item list-group-item-action py-2 lh-sm" data-bs-toggle="list">
-  //   <div class="d-flex w-100 align-items-center justify-content-between">
-  //     <strong class="col-9 mb-1 line-clamp-1">Subject 1</strong>
-  //     <small>01.01.2021</small>
-  //   </div>
-  //   <div class="mb-1 small line-clamp-2">Text 1</div>
-  // </a>
-  // <div class="horizontal divider"></div>
+  let a = document.createElement('a')
+  a.href = '#' + folder + '/' + page + '/show/' + uid  
+  a.classList.add('message-list-item', 'list-group-item', 'list-group-item-action', 'py-2', 'lh-sm')
+  // list-group-item: make the element a list-group-item.
+  // list-group-item-action: necessary for it to be clickable.
+  // py-2: padding to top and bottom of 0.5rem each.
+  // lh-sm: line-height small (interval between the lines).
+  let a_inner = ''
+  a_inner += '<div class="d-flex w-100 align-items-center justify-content-between">'
+  a_inner += '  <strong class="col-9 mb-1 line-clamp-1">' + subject + '</strong>'
+  a_inner += '  <small>' + date.toLocaleDateString().replace(/\//g, '.') + '</small>'
+  a_inner += '</div>'
+  a_inner += '<div class="mb-1 small line-clamp-2">' + text + '</div>'
+  a.innerHTML = a_inner
 
+  render_msg = create_render_msg_func(msg)
+  a.onclick = render_msg
+  return a
+}
+
+
+function render_msg_list(msg_infos, folder, page) {
+  let msg_list = document.getElementById('msg-list')
+  msg_list.innerHTML = ''
+
+  // Add number of messages:
+  let n_msgs = msg_infos.length
+  let info_n_msgs = document.createElement('p')
+  info_n_msgs.classList.add('text-muted', 'small', 'px-3', 'mb-1', 'pt-0')
+  info_n_msgs.innerText = n_msgs + ' messages'
+  msg_list.appendChild(info_n_msgs)
+
+  // Add messages themselves:
+  for (let i = 0; i < n_msgs; i++) {
+    msg_list.appendChild(create_msg_list_item(msg_infos[i], folder, page))
+    if (i < n_msgs - 1) {
+      let horizontal_divider = document.createElement('div')
+      horizontal_divider.classList.add('horizontal-divider')
+      msg_list.appendChild(horizontal_divider)
+    }
+  }
 }
 
 
@@ -239,9 +288,14 @@ function update_page_content(path) {
   let page = parts[1]
   let mode = parts[2]
 
-  // AJAX request:
-  if (mode == 'show') { // TODO: also add support for mode == write
+  if (mode == 'show') {  // TODO- also add support for mode == write
     let uid = get_or_null(parts, 3)
+    if (uid) {
+      // Note: this is a temporary measure. 
+      // But in the future (after refactoring) there will be even less server requests.
+      return
+    }
+    // AJAX request:
     $.post(
       "/query_the_server",
       {
@@ -252,8 +306,9 @@ function update_page_content(path) {
 
       function(data, status) {
         current_folder = window.location.hash.split('/')[0].slice(1)
-        if (current_folder !== folder) {
-          return
+        if (current_folder !== folder) {  
+          // if the user has changed the folder
+          return  // don't update the page with the results of this request
         }
         if (!data.success) {
           console.log('error: ' + data.error)
@@ -261,9 +316,8 @@ function update_page_content(path) {
           data = data.data
           let user_folders = data.user_folders
           let msg_infos = data.msg_infos
-          render_user_folders(user_folders)
-          render_msg_list(msg_infos)
-          // render_message_content(uid)  // TODO: create this functino
+          render_user_folders(user_folders, folder)
+          render_msg_list(msg_infos, folder, page)
         }
       }
     );
@@ -357,4 +411,30 @@ add_listeners_to_all_folders();
 // 
 
 
+
+
+// TODO (good style): 
+// When loading the page - use the DATABASE for fast initial emails
+
+// if loading the page for the first time (window.onload) - then (disregarding the future clicks between folders - even with the clicks the data must still load), query the email server and save the results to the database 100%, and update the page contents again
+
+// Subsequently, query the server only in this case: on the button click
+// Question: can we somehow listen to the incoming emails, and update page when a new email comes in? // in a pinch, can query the server just every 2 mins
+
+// When clicking the buttons, can:
+// - either use Bootstrap's  data-bs-toggle="list"  (all information will be present in the dom, just not shown)
+// - or load all the data into the onclick events - so it will be stored in the javascript, and inserted on click
+
+///
+// On successful log in - maybe already send the request to the database for the data?
+
+// when querying the server - must query for EVERYTHING! (not only new emails, but also new folders, moved emails, deleted emails, trash updates, drafts, etc.... so much... how to do it?)
+        
+
+
+// info not needed anymore?:
+// (
+// You have to escape special characters with a double backslash:
+// $('#\\/about\\/')
+// )
 
