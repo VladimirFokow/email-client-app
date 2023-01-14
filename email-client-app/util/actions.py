@@ -1,4 +1,4 @@
-from .configs import IMAP_CONFIGS, SUPPORTED_EMAIL_PROVIDERS, DEFAULT_FOLDERS
+from .configs import IMAPConfig, SUPPORTED_EMAIL_PROVIDERS, DEFAULT_FOLDERS
 from imap_tools import MailBox, MailboxLoginError
 
 
@@ -64,8 +64,8 @@ def are_credentials_valid(email, password):
     email_provider = email.split('@')[-1]
     if email_provider not in SUPPORTED_EMAIL_PROVIDERS:
         return False
-    host = IMAP_CONFIGS[email_provider]['MAIL_SERVER']
-    port = IMAP_CONFIGS[email_provider]['MAIL_PORT']
+    host = IMAPConfig.config[email_provider]['MAIL_SERVER']
+    port = IMAPConfig.config[email_provider]['MAIL_PORT']
     try:
         with MailBox(host=host, port=port).login(email, password):
             return True

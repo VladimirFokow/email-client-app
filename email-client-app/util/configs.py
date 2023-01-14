@@ -1,7 +1,10 @@
 """Configuration details"""
 
+import functools
+
+
 # For sending
-SMPT_CONFIGS = {
+SMTP_CONFIGS = {
     'gmail.com': dict(MAIL_SERVER='smtp.gmail.com',
                       MAIL_PORT=465,  # 587 if TLS=True, SSL=False
                       MAIL_USE_TLS=False,
@@ -52,4 +55,28 @@ SUPPORTED_EMAIL_PROVIDERS = ['gmail.com', 'ukr.net']
 
 DEFAULT_FOLDERS = ['inbox', 'sent', 'drafts', 'bin']  # don't change
 # (if want to change - make sure everything else continues to work)
+
+
+
+def singleton(cls):
+    """
+    A decorator to make a class a Singleton class.
+    """
+    @functools.wraps(cls)
+    def wrapper_singleton(*args, **kwargs):
+        if not wrapper_singleton.instance:
+            wrapper_singleton.instance = cls(*args, **kwargs)
+        return wrapper_singleton.instance
+    wrapper_singleton.instance = None
+    return wrapper_singleton
+
+
+@singleton
+class SMTPConfig:
+    config = SMTP_CONFIGS
+
+@singleton
+class IMAPConfig:
+    config = IMAP_CONFIGS
+
 
