@@ -152,7 +152,7 @@ class SaveDraft(ExecuteCommand):
         subject = self.request.form.get('subject')
         body = self.request.form.get('body')
         attachments = self.request.form.get('body')
-        self.smtp_msg = self.create_smtp_msg(recipient, subject, body, attachments)
+        self.smtp_msg = create_smtp_msg(recipient, subject, body, attachments)
 
     def run_command(self, mailbox):
         server_folder = client_to_server_folder_name('drafts', mailbox)
@@ -162,29 +162,35 @@ class SaveDraft(ExecuteCommand):
 
 class SendEmail(ExecuteCommand):
     def get_parameters(self):
-        email = self.session.get('email')
-        password = self.session.get('password')
-        email_provider = email.split('@')[-1]
-        self.app.config.update(SMTPConfig.config[email_provider])
-        user_config = {"MAIL_DEFAULT_SENDER": email,
-                       "MAIL_USERNAME": email,
-                       "MAIL_PASSWORD": password}
-        self.app.config.update(user_config)
-        recipient = self.request.form['to']
-        subject = self.request.form.get('subject', '')
-        body = self.request.form.get('text', '')
-        attachments = self.request.form.get('attachments', [])
-        self.smtp_msg = self.create_smtp_msg(recipient, subject, body, attachments)
+        self.recipient = self.request.form['to']
+        self.subject = self.request.form.get('subject', '')
+        self.body = self.request.form.get('text', '')
+        self.attachments = self.request.form.get('attachments', [])
 
     def run_command(self, mailbox):
-        mail = flask_mail.Mail(self.app)
-        mail.send(self.smtp_msg)
-        
-        mailbox.send_message(self.smtp_msg)
+        mail = flask_mail.Mail(self.app)  # this has to be before `create_smtp_msg`
+        smtp_msg = create_smtp_msg(self.recipient, self.subject, self.body, self.attachments)
+        mail.send(smtp_msg)
         return jsonify({'success': True})
 
 
 ### Helpful functions:
+
+def create_smtp_msg(recipient, subject, body, attachments):
+    """ 
+    Can use only after `mail = flask_mail.Mail(app)`.
+    Receives input fields needed for the email, and creates it 
+    using `Flask-Mail`: smtp (for sending).
+
+    Must be run with app context.
+    """
+    smtp_msg = flask_mail.Message()
+    smtp_msg.subject = subject
+    smtp_msg.recipients = [recipient]
+    smtp_msg.body = body
+    smtp_msg.attachments = attachments
+    return smtp_msg
+
 
 # Flask-Mail (smtp) to imap_tools (imap)
 def smtp_to_imap_type(smtp_msg):
@@ -200,20 +206,5 @@ def smtp_to_imap_type(smtp_msg):
     imap_msg.html = smtp_msg.html
     imap_msg.attachments = smtp_msg.attachments
     return imap_msg
-
-
-# Must be run with app context:
-def create_smtp_msg(recipient, subject, body, attachments):
-    """ 
-    Can use only after `mail = flask_mail.Mail(app)`.
-    Receives input fields needed for the email, and creates it 
-    using `Flask-Mail`: smtp (for sending).
-    """
-    smtp_msg = flask_mail.Message()
-    smtp_msg.subject = subject
-    smtp_msg.recipients = [recipient]
-    smtp_msg.body = body
-    smtp_msg.attachments = attachments
-    return smtp_msg
 
 

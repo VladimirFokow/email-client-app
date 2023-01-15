@@ -5,6 +5,7 @@ from secrets import token_hex
 from util.database import get_models
 from util.forms import LoginForm
 from util.util import are_credentials_valid
+from util.configs import SMTPConfig
 from util.actions import (GetFoldersAndNMessages, CreateFolder, MoveTo, 
                           SaveDraft, SendEmail)
 
@@ -104,7 +105,17 @@ def query_the_server():
 @app.route('/send_email', methods=['POST'])
 def send_email():
     """ Send an email """
-    return SendEmail(request, session, models).execute()
+    email = session.get('email')
+    password = session.get('password')
+    email_provider = email.split('@')[-1]
+    app.config.update(SMTPConfig.config[email_provider])
+    user_config = {"MAIL_DEFAULT_SENDER": email,
+                    "MAIL_USERNAME": email,
+                    "MAIL_PASSWORD": password}
+    app.config.update(user_config)
+    send_object = SendEmail(request, session, models)
+    send_object.app = app
+    return send_object.execute()
 
 
 
