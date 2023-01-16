@@ -64,9 +64,12 @@ $("#header-email").click(whenClickedOnEmail)
 
 
 // ---------------------------------------------------------------------
-// AJAX (for updating page contents, 
-// getting info from the db, and then from the server):
+// Main page logic:
+// - update page contents
+// - get info from the db, and then from the server using AJAX
 
+
+// Helper functions:
 
 /**
  * Access element at index i in a list, and if index out of bounds,
@@ -150,9 +153,13 @@ function correct_path(path) {
 }
 
 
+
+// ---------------------------
+// Render message list:
+
+// Set the html with the user folders:
+
 function render_user_folders(user_folders, folder) {
-  // TODO: when rendering the user folders, their active class disappears if not added here (is there a better way to do this? e.g. from database)
-  // TODO: rendering user folders takes too much time, if not taked from the database
   let html = ''
   if (user_folders.length > 0) {
     html = '<ul class="nav flex-column mb-2">'
@@ -179,6 +186,9 @@ function render_user_folders(user_folders, folder) {
   add_listeners_to_all_folders()
 }
 
+
+// A "closure" that will be used to create a function for each email message's onclick event, 
+// which will display that email's contents in the main section of the page.
 
 function create_render_msg_func(msg) {
   // When an email message is selected - this function will be called:
@@ -233,6 +243,8 @@ function create_render_msg_func(msg) {
 }
 
 
+// Returns an html component for a single email message list item:
+
 function create_msg_list_item(msg, folder, page) {
   let uid = msg.uid
   let date = new Date(msg.date)
@@ -260,6 +272,8 @@ function create_msg_list_item(msg, folder, page) {
 }
 
 
+// Renders the list of email messages in the main section of the page.
+
 function render_msg_list(msg_infos, folder, page) {
   let msg_list = $('#msg-list')[0]
   msg_list.innerHTML = ''
@@ -283,7 +297,12 @@ function render_msg_list(msg_infos, folder, page) {
 }
 
 
-// When send email button is clicked:
+
+// ---------------------------
+// Email creation section:
+
+// When the "send email" button is clicked - send email:
+
 function send_email() {
   let to = $("#write_to").val()
   let subject = $("#write_subject").val()
@@ -307,8 +326,8 @@ function send_email() {
 }
 
 
+// When the "save draft" button is clicked:
 
-// When save draft button is clicked:
 function save_draft() {
   let to = $("#write_to").val()
   let subject = $("#write_subject").val()
@@ -331,6 +350,8 @@ function save_draft() {
   );
 }
 
+
+// Returns an html component for the "write email" page:
 
 function empty_email_write_page() {
   // A new empty element with forms to write an email:
@@ -472,17 +493,43 @@ function empty_email_write_page() {
 }
 
 
-function render_email_write_page(draft, uid) {
+// Render the page for writing an email (if a draft - already with its details):
+
+function render_email_writing_page(draft, uid) {
   let container = empty_email_write_page()
   if (draft !== 'draft' || !uid) {
     // New page with empty fields:
     $("main").html(container)
+  
   } else {
+    // Page with the draft contents filled in:
+
+    // TODO- this section
+    // let draft_contents = get_draft_contents(uid)
+    // Fill in the fields:
+    // container
+    // $('#write_to')[0].value = draft_contents.to
+    // $('#write_subject')[0].value = draft_contents.subject
+    // $('#write_text')[0].value = draft_contents.text
+    // // Attachments:
+    // let attach_ul = $('#attach_ul')[0]
+    // let n_attachments = draft_contents.attachments.length
+    // for (let i = 0; i < n_attachments; i++) {
+    //   let file_li = document.createElement('li')  // actually include the attachments
+    //   file_li.innerText = draft_contents.attachments[i]
+    //   attach_ul.appendChild(file_li)
+    // }
     $("main").html(container)
   }
   activate_feather_icons()
 }
 
+
+
+// ---------------------------
+// Whole page rendering:
+
+// Render user folders and the message list:
 
 function update_page_content(path) {
   let parts = path.split( '/' );  // path must be already in the correct format
@@ -532,23 +579,12 @@ function update_page_content(path) {
     // Display a new page with forms for writing a new email:
     let draft = get_or_null(parts, 3)
     let uid = get_or_null(parts, 4)
-    render_email_write_page(draft, uid)
+    render_email_writing_page(draft, uid)
   }
 }
 
 
-function render_page() {
-  // Update the page hash and page content:
-  let path = window.location.hash  // e.g. "#inbox/"
-  let corrected_path = correct_path(path)  // e.g. "#inbox/p0/show/123"
-  
-  if (corrected_path != path) {   // need to change the path:
-    window.location.hash = corrected_path  // set the corrected path
-  } else {
-    update_page_content(path)  // render the actual content
-  }
-}
-
+// If the active folder should be one of the default ones, set it as active:
 
 function set_default_folder_active() {
   let folder = window.location.hash.split('/')[0].slice(1)
@@ -564,11 +600,23 @@ function set_default_folder_active() {
 }
 
 
-window.onload = function() {
-  set_default_folder_active()
-  render_page()
+// Change the url if needed, and render the whole page:
+
+function render_page() {
+  // Update the page hash and page content:
+  let path = window.location.hash  // e.g. "#inbox/"
+  let corrected_path = correct_path(path)  // e.g. "#inbox/p0/show/123"
+  
+  if (corrected_path != path) {   // need to change the path:
+    window.location.hash = corrected_path  // set the corrected path
+  } else {
+    set_default_folder_active()  // if it's the default folder, make it active
+    update_page_content(path)  // render the actual content
+  }
 }
 
+
+window.onload = render_page
 window.addEventListener('hashchange', render_page)
 
 
@@ -596,8 +644,8 @@ add_listeners_to_all_folders();
 
 
 // ---------------------------------------------------------------------
+// Button "Create new email message":
 
-// Create new email button:
 $("#create").click(function() {
   let parts = window.location.hash.split('/')
   let folder = parts[0].slice(1)
@@ -606,3 +654,16 @@ $("#create").click(function() {
 })
 
 
+// ---------------------------------------------------------------------
+// Modal autofocus:
+
+const createNewFolderModal = document.getElementById('create-new-folder-modal')
+const inputNewFolderName = document.getElementById('input-new-folder-name')
+
+createNewFolderModal.addEventListener('shown.bs.modal', () => {
+  inputNewFolderName.focus()
+})
+
+
+// ---------------------------------------------------------------------
+// 

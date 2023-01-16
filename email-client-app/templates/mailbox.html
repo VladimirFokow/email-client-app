@@ -41,6 +41,33 @@
     </div>
   </div>
 
+  <!-- Bootstrap Modals: -->
+
+  <!-- Modal: to create a new folder -->
+  <div class="modal fade" id="create-new-folder-modal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h1 class="modal-title fs-5" id="create-new-folder-modal-label">New Folder</h1>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <!-- Form to get the name of the new folder: -->
+          <form>
+            <div class="mb-3">
+              <label for="folder-name" class="col-form-label">Folder name:</label>
+              <input type="text" class="form-control" id="input-new-folder-name">
+            </div>
+          </form>  <!-- TODO- if the name already exists, disable the "Create" button, and show a red warning text below -->
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="button" class="btn btn-primary">Create</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <div class="container-fluid" id="area-below-header">
     <div class="row">
       
@@ -88,10 +115,10 @@
                   </a>
                 </li>
               </ul>
-              
+
               <h6 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-4 mb-1 text-muted">
                 <span>FOLDERS</span>
-                <div class="d-flex align-items-center text-muted" id="new-folder">
+                <div class="d-flex align-items-center text-muted" id="new-folder" data-bs-toggle="modal" data-bs-target="#create-new-folder-modal">
                   <span data-feather="plus-circle"></span>
                 </div>
               </h6>
