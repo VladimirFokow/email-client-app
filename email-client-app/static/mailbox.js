@@ -462,7 +462,7 @@ class EmailStore {
     };
   }
   
-  getEmails(folderfolder=null) {
+  getEmails(folder=null) {
     if (folder) {
       return this.emails[folder];
     }
