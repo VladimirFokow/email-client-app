@@ -5,9 +5,8 @@ from secrets import token_hex
 from util.database import get_models
 from util.forms import LoginForm
 from util.util import are_credentials_valid
-from util.configs import SMTPConfig
-from util.actions import (GetFoldersAndNMessages, CreateFolder, MoveTo, 
-                          SaveDraft, SendEmail)
+from util.actions import (GetEmails, CreateFolder, MoveTo, SendToBin, 
+                          DeleteEmail, SaveEmail, SendEmail)
 
 app = Flask(__name__)
 # Session:
@@ -51,8 +50,8 @@ def login():
             flash('Sorry, invalid email or password 😕', category='danger')
             return redirect(url_for('login'))
         # Save valid credentials to session:
-        session['email'] = email
-        session['password'] = password
+        session['user_email'] = email
+        session['user_password'] = password
         session['logged in'] = True
 
         # If the user in the database doesn't exist:
@@ -70,8 +69,8 @@ def login():
 
 @app.route('/logout')
 def logout():
-    session['email'] = None
-    session['password'] = None
+    session['user_email'] = None
+    session['user_password'] = None
     session['logged in'] = False
     return redirect(url_for('login'))
 
@@ -92,30 +91,20 @@ def query_the_server():
     - recipient, subject, body, attachments
     """
     command = request.form['command']
-    if command == 'get_folders_and_n_messages':
-        return GetFoldersAndNMessages(request, session, models).execute()
+    if command == 'get_emails':
+        return GetEmails(request, session, models).execute()
     elif command == 'create_folder':
         return CreateFolder(request, session, models).execute()
     elif command == 'move_to':
         return MoveTo(request, session, models).execute()
-    elif command == 'save_draft':
-        return SaveDraft(request, session, models).execute()
-
-
-@app.route('/send_email', methods=['POST'])
-def send_email():
-    """ Send an email """
-    email = session.get('email')
-    password = session.get('password')
-    email_provider = email.split('@')[-1]
-    app.config.update(SMTPConfig.config[email_provider])
-    user_config = {"MAIL_DEFAULT_SENDER": email,
-                    "MAIL_USERNAME": email,
-                    "MAIL_PASSWORD": password}
-    app.config.update(user_config)
-    send_object = SendEmail(request, session, models)
-    send_object.app = app
-    return send_object.execute()
+    elif command == 'move_to_bin':
+        return SendToBin(request, session, models).execute()
+    elif command == 'delete':
+        return DeleteEmail(request, session, models).execute()
+    elif command == 'save_email':
+        return SaveEmail(request, session, models, app).execute()
+    elif command == 'send_email':
+        return SendEmail(request, session, models, app).execute()
 
 
 

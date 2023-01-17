@@ -2,8 +2,9 @@ from .configs import IMAPConfig, SUPPORTED_EMAIL_PROVIDERS, DEFAULT_FOLDERS
 from imap_tools import MailBox, MailboxLoginError
 
 
-def create_folder_mapping(email_provider, server_folders):
+def create_folder_mapping(email_provider, mailbox):
     """ Create mapping: client folder name -> server folder name """
+    server_folders = mailbox.folder.list()
     folder_mapping = {}
     if email_provider == 'gmail.com':
         for server_folder in server_folders:
@@ -40,8 +41,7 @@ def get_mailbox_folder_mapping(mailbox):
     elif 'gmail.com' in host:
         host = 'gmail.com'
     email_provider = host.split('@')[-1]
-    server_folders = mailbox.folder.list()
-    folder_mapping = create_folder_mapping(email_provider, server_folders)
+    folder_mapping = create_folder_mapping(email_provider, mailbox)
     return folder_mapping
 
 

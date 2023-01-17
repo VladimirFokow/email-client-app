@@ -12,7 +12,7 @@
       <div class="col-4 col-lg-5 px-0">
         <div id="email-container">
           <div id="header-email" data-bs-toggle="tooltip" data-bs-placement="bottom" title="copy to clipboard"> 
-            {{ session.email }}
+            {{ session.user_email }}
           </div>
         </div>
       </div>
@@ -23,8 +23,9 @@
           <div id="tools-container" class="flex-grow-1">
             <div id="header-tools"> 
               <button class="action btn btn-outline-primary btn-sm" id="create"> create new email </button>
-              <button class="action btn btn-outline-primary btn-sm" id="delete"> bin </button>
-              <button class="action btn btn-outline-primary btn-sm" id="move"> move to </button>
+              <button class="action btn btn-outline-primary btn-sm" id="move-to-bin"> bin </button>
+              <button class="action btn btn-outline-primary btn-sm" id="delete"> delete </button>
+              <button class="action btn btn-outline-primary btn-sm my-dropdown-toggle" id="move" data-bs-toggle="modal" data-bs-target="#move-to-folder-modal"> move to </button>
             </div>
           </div>
           
@@ -40,8 +41,26 @@
       
     </div>
   </div>
+  
 
   <!-- Bootstrap Modals: -->
+
+  <!-- Modal: to show a folders where to move the email -->
+  <div class="modal fade" id="move-to-folder-modal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h1 class="modal-title fs-5" id="move-to-folder-modal-label">Move to folder</h1>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="list-group" id="move-to-folder-folders">
+            <!-- JavaScript will add the folders here -->
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <!-- Modal: to create a new folder -->
   <div class="modal fade" id="create-new-folder-modal" tabindex="-1">
@@ -58,15 +77,17 @@
               <label for="folder-name" class="col-form-label">Folder name:</label>
               <input type="text" class="form-control" id="input-new-folder-name">
             </div>
-          </form>  <!-- TODO- if the name already exists, disable the "Create" button, and show a red warning text below -->
+          </form>
+          <div id="new-folder-name-error-message" class="text-danger"></div>
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-          <button type="button" class="btn btn-primary">Create</button>
+          <button type="button" class="btn btn-primary"  data-bs-dismiss="modal" id="submit-create-new-folder" disabled>Create</button>
         </div>
       </div>
     </div>
   </div>
+
 
   <div class="container-fluid" id="area-below-header">
     <div class="row">
@@ -126,7 +147,7 @@
               <div id="user-folders">
                 <!-- JavaScript will add folders here -->
               </div>
-              
+
             </div>
           </nav>
           

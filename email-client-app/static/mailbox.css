@@ -76,7 +76,7 @@ body {
   margin-left: -0.5rem;
   margin-right: 1rem;
   overflow: scroll;
-  /* Shadow on the left and  right side (inside) of this container: */
+  /* Shadow on the left and right sides (inside) of this container: */
   -webkit-mask-image: linear-gradient(to right, transparent 0%, black 2%, black 96%, transparent 100%);
   mask-image: linear-gradient(to right, transparent 0%, black 2%, black 96%, transparent 100%);
 }
