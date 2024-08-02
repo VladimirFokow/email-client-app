@@ -62,15 +62,29 @@ def singleton(cls):
     """
     A decorator to make a class a Singleton class.
 
-    - wrapper_singleton() is really called when you create an instance of the class, e.g. SMTPConfig()
-    - if you create SMTPConfig() again, it will return the same instance
-    - SMTPConfig._instance contains the real instance class
+    Usage:
+    ```py
+    @singleton
+    class A:
+        state = []
+    
+    a = A()
+    b = A()
+
+    assert a is b  # True
+    ```
+
+    Explanation:
+
+    - `wrapper_singleton()` is really called when you create an instance of the class, e.g. `A()`
+    - if you create `A()` again, it will return the same instance
+    - `A._instance` contains the real instance of this class
     - fun fact: in Python functions are objects, so we're setting
       an attribute `_instance` on the function `wrapper_singleton`
     """
     @functools.wraps(cls)
     def wrapper_singleton(*args, **kwargs):
-        if wrapper_singleton._instance is None:  # (._instance is set to None in this `singleton` decorator - below)
+        if wrapper_singleton._instance is None:  # (`._instance` is set to `None` below)
             wrapper_singleton._instance = cls(*args, **kwargs)
         return wrapper_singleton._instance
     wrapper_singleton._instance = None
